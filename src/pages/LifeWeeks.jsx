@@ -75,14 +75,7 @@ const LifeWeeks = () => {
     setShowModal(false);
   };
 
-  if (loading) {
-    return (
-      <div className="page-loader">
-        <span className="loader" />
-        <p>جاري تحميل رحلتك...</p>
-      </div>
-    );
-  }
+
 
   // Calculate life stats
   const {
@@ -236,6 +229,15 @@ const LifeWeeks = () => {
       </div>
     );
   }, [weeksArray, setHoveredWeek]);
+
+  if (loading) {
+    return (
+      <div className="page-loader">
+        <span className="loader" />
+        <p>جاري تحميل رحلتك...</p>
+      </div>
+    );
+  }
 
   // Dynamic sentence
   let dynamicSentence = '';
