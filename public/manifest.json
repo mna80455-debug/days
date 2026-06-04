@@ -1,0 +1,24 @@
+{
+  "short_name": "أيام",
+  "name": "أيام - تطبيق الوعي اليومي",
+  "description": "تطبيق يساعدك على إدراك أيامك وتوثيق رحلتك اليومية",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F8F5F0",
+  "theme_color": "#5C4B43",
+  "display": "standalone",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar"
+}
