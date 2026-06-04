@@ -375,6 +375,62 @@ const Evening = () => {
           100% { background-position: 100% 100%; }
         }
         
+        .card-dark {
+          background: rgba(27, 40, 54, 0.65) !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        .textarea {
+          background: rgba(255, 255, 255, 0.05) !important;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #ffffff !important;
+          transition: all 0.3s ease !important;
+        }
+        .textarea:focus {
+          background: rgba(255, 255, 255, 0.08) !important;
+          border-color: var(--orange) !important;
+          box-shadow: 0 0 12px var(--orange-glow) !important;
+        }
+        
+        .input {
+          background: rgba(255, 255, 255, 0.05) !important;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #ffffff !important;
+          transition: all 0.3s ease !important;
+        }
+        .input:focus {
+          background: rgba(255, 255, 255, 0.08) !important;
+          border-color: var(--orange) !important;
+          box-shadow: 0 0 12px var(--orange-glow) !important;
+        }
+        
+        .tag {
+          background: rgba(255, 255, 255, 0.06) !important;
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          color: rgba(255, 255, 255, 0.7) !important;
+          transition: all 0.25s ease !important;
+        }
+        .tag:hover {
+          background: rgba(255, 255, 255, 0.12) !important;
+          border-color: var(--orange) !important;
+          color: #ffffff !important;
+        }
+        .tag.active {
+          background: rgba(244, 162, 97, 0.2) !important;
+          border-color: var(--orange) !important;
+          color: var(--orange) !important;
+          box-shadow: 0 0 10px var(--orange-glow) !important;
+        }
+
         .evening-star {
           position: fixed;
           width: 2px;
@@ -492,7 +548,15 @@ const Evening = () => {
                     onChange={() => handleToggleTask(task.id)}
                     aria-label={`تبديل حالة: ${task.text}`}
                   />
-                  <span className="checkbox-mark">
+                  <span 
+                    className="checkbox-mark"
+                    style={{
+                      borderColor: task.completed ? 'var(--orange)' : 'var(--border-ui-hover)',
+                      backgroundColor: task.completed ? 'var(--orange)' : 'transparent',
+                      boxShadow: task.completed ? '0 0 10px var(--orange-glow)' : 'none',
+                      transition: 'all 0.25s ease'
+                    }}
+                  >
                     <Check size={14} strokeWidth={3} />
                   </span>
                   <span className={`checkbox-label ${task.completed ? 'checked' : ''}`}>

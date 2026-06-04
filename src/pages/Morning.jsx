@@ -247,16 +247,58 @@ const Morning = () => {
           100% { background-position: 0% 0%; }
         }
         
+        .card {
+          background: rgba(255, 255, 255, 0.45) !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.5) !important;
+          box-shadow: 0 8px 32px rgba(92, 75, 67, 0.05) !important;
+        }
+        
+        .input {
+          background: rgba(255, 255, 255, 0.5) !important;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          border: 1px solid rgba(255, 255, 255, 0.6) !important;
+          transition: all 0.3s ease !important;
+        }
+        .input:focus {
+          background: rgba(255, 255, 255, 0.8) !important;
+          border-color: var(--orange) !important;
+          box-shadow: 0 0 12px var(--orange-glow) !important;
+        }
+        
         .mood-btn {
-          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, border-color 0.2s !important;
+          width: 86px;
+          height: 86px;
+          border-radius: 50% !important;
+          display: flex !important;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 0 !important;
+          min-width: 86px !important;
+          background: rgba(255, 255, 255, 0.25) !important;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.45) !important;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, border-color 0.3s, box-shadow 0.3s !important;
         }
         .mood-btn:hover {
-          transform: translateY(-4px) scale(1.05) !important;
+          background: rgba(255, 255, 255, 0.5) !important;
+          border-color: var(--orange) !important;
+          box-shadow: 0 6px 18px rgba(244, 162, 97, 0.2) !important;
+          transform: translateY(-5px) scale(1.08) !important;
         }
         .mood-btn:active {
           transform: scale(0.95) !important;
         }
         .mood-btn.active {
+          background: rgba(244, 162, 97, 0.15) !important;
+          border-color: var(--orange) !important;
+          color: var(--orange) !important;
+          box-shadow: 0 8px 24px var(--orange-glow), inset 0 0 12px rgba(244, 162, 97, 0.15) !important;
           animation: moodActiveBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
         @keyframes moodActiveBounce {
@@ -474,7 +516,15 @@ const Morning = () => {
                       onChange={() => handleToggleTask(task.id)}
                       aria-label={`تبديل حالة المهمة: ${task.text}`}
                     />
-                    <span className="checkbox-mark" style={{ borderColor: task.completed ? 'var(--green)' : taskCat.color }}>
+                    <span 
+                      className="checkbox-mark" 
+                      style={{ 
+                        borderColor: task.completed ? taskCat.color : 'var(--border-ui-hover)',
+                        backgroundColor: task.completed ? taskCat.color : 'transparent',
+                        boxShadow: task.completed ? `0 0 10px ${taskCat.color}70` : 'none',
+                        transition: 'all 0.25s ease'
+                      }}
+                    >
                       <Check size={14} strokeWidth={3} />
                     </span>
                     <span className={`checkbox-label${task.completed ? ' checked' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>

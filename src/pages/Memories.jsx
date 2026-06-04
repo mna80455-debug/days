@@ -461,6 +461,30 @@ const Memories = () => {
   return (
     <div className="page-content-wide">
       
+      <style>{`
+        .polaroid-card {
+          background: #ffffff !important;
+          border: 1px solid var(--border-ui) !important;
+          padding: 16px 16px 28px 16px !important;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+          border-radius: 4px !important;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .polaroid-card:hover {
+          transform: translateY(-4px) rotate(1deg) !important;
+          box-shadow: 0 10px 20px rgba(92, 75, 67, 0.12) !important;
+          border-color: var(--orange) !important;
+        }
+        .polaroid-image-container {
+          aspect-ratio: 1.15;
+          overflow: hidden;
+          background: #faf8f5;
+          border: 1px solid rgba(0,0,0,0.04);
+          margin-bottom: 12px;
+          border-radius: 2px;
+        }
+      `}</style>
+      
       <div className="flex items-center justify-between w-full animate-in">
         <button 
           onClick={() => navigate('/dashboard')}
@@ -599,7 +623,10 @@ const Memories = () => {
 
             let cardClass = 'card relative overflow-hidden transition-all duration-300 hover:shadow-lg';
             if (isQuote) cardClass += ' bg-pink-50 border-pink-100 text-center py-xl';
-            else if (isFeaturedCard) cardClass += ' border-orange-400 border-2';
+            else {
+              cardClass = 'polaroid-card relative overflow-hidden';
+              if (isFeaturedCard) cardClass += ' border-orange-400 border-2';
+            }
 
             return (
               <article key={mem.id} className={cardClass} style={{ animationDelay: `${0.1 * (index + 2)}s` }}>
@@ -644,13 +671,10 @@ const Memories = () => {
 
                 {hasImages && (
                   <div 
-                    className="grid gap-xs rounded-md overflow-hidden mb-md"
+                    className="polaroid-image-container grid gap-xs overflow-hidden"
                     style={{ 
                       gridTemplateColumns: mem.images.length > 1 ? '1fr 1fr' : '1fr',
-                      maxHeight: '160px',
-                      padding: '4px',
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--border-ui)'
+                      height: '200px'
                     }}
                   >
                     {mem.images.slice(0, 4).map((img, i) => (
@@ -660,8 +684,8 @@ const Memories = () => {
                         alt="مرفق الذكرى" 
                         className="w-full object-cover"
                         style={{ 
-                          height: mem.images.length > 1 ? '75px' : '150px',
-                          borderRadius: '4px'
+                          height: '100%',
+                          borderRadius: '2px'
                         }} 
                       />
                     ))}

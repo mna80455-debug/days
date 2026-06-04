@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db, isMock } from '../firebase/config';
@@ -85,76 +85,157 @@ const LifeWeeks = () => {
   }
 
   // Calculate life stats
-  let weeksLived = 0;
-  let totalWeeks = 0;
-  let weeksRemaining = 0;
-  let percentLived = 0;
-  let ageYears = 0;
-  let ageMonths = 0;
-  let ageDays = 0;
-  let currentWeekOfYear = 0;
-  let weeksArray = [];
+  const {
+    weeksLived,
+    totalWeeks,
+    weeksRemaining,
+    percentLived,
+    ageYears,
+    ageMonths,
+    ageDays,
+    currentWeekOfYear,
+    weeksArray
+  } = useMemo(() => {
+    let weeksLived = 0;
+    let totalWeeks = 0;
+    let weeksRemaining = 0;
+    let percentLived = 0;
+    let ageYears = 0;
+    let ageMonths = 0;
+    let ageDays = 0;
+    let currentWeekOfYear = 0;
+    let weeksArray = [];
 
-  if (lifeData && lifeData.birthDate) {
-    const birth = new Date(lifeData.birthDate);
-    const now = new Date();
-    const expectedLifespan = lifeData.expectedLifespan || 69;
-    
-    totalWeeks = expectedLifespan * 52;
+    if (lifeData && lifeData.birthDate) {
+      const birth = new Date(lifeData.birthDate);
+      const now = new Date();
+      const expectedLifespan = lifeData.expectedLifespan || 69;
+      
+      totalWeeks = expectedLifespan * 52;
 
-    const msPerWeek = 1000 * 60 * 60 * 24 * 7;
-    weeksLived = Math.floor((now - birth) / msPerWeek);
-    weeksLived = Math.max(0, weeksLived);
+      const msPerWeek = 1000 * 60 * 60 * 24 * 7;
+      weeksLived = Math.floor((now - birth) / msPerWeek);
+      weeksLived = Math.max(0, weeksLived);
 
-    weeksRemaining = totalWeeks - weeksLived;
-    percentLived = totalWeeks > 0 ? ((weeksLived / totalWeeks) * 100).toFixed(1) : 0;
+      weeksRemaining = totalWeeks - weeksLived;
+      percentLived = totalWeeks > 0 ? ((weeksLived / totalWeeks) * 100).toFixed(1) : 0;
 
-    // Detailed age
-    let diff = new Date(now - birth);
-    ageYears = diff.getUTCFullYear() - 1970;
-    ageMonths = diff.getUTCMonth();
-    ageDays = diff.getUTCDate() - 1;
+      // Detailed age
+      let diff = new Date(now - birth);
+      ageYears = diff.getUTCFullYear() - 1970;
+      ageMonths = diff.getUTCMonth();
+      ageDays = diff.getUTCDate() - 1;
 
-    // Current week of the year
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    currentWeekOfYear = Math.ceil((((now - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
+      // Current week of the year
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      currentWeekOfYear = Math.ceil((((now - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
 
-    // Build grid array
-    for (let i = 0; i < totalWeeks; i++) {
-      let status = 'future';
-      if (i < weeksLived) status = 'past';
-      else if (i === weeksLived) status = 'current';
+      // Build grid array
+      for (let i = 0; i < totalWeeks; i++) {
+        let status = 'future';
+        if (i < weeksLived) status = 'past';
+        else if (i === weeksLived) status = 'current';
 
-      let title = '';
-      const yearIndex = Math.floor(i / 52) + 1;
-      const weekIndex = (i % 52) + 1;
+        const yearIndex = Math.floor(i / 52) + 1;
+        const weekIndex = (i % 52) + 1;
 
-      // Classify life phases
-      let phase = 'adult';
-      if (yearIndex <= 6) phase = 'childhood';
-      else if (yearIndex <= 18) phase = 'school';
-      else if (yearIndex <= 22) phase = 'university';
+        // Classify life phases
+        let phase = 'adult';
+        if (yearIndex <= 6) phase = 'childhood';
+        else if (yearIndex <= 18) phase = 'school';
+        else if (yearIndex <= 22) phase = 'university';
 
-      let phaseLabel = '';
-      if (phase === 'childhood') phaseLabel = 'الطفولة المبكرة 👶';
-      else if (phase === 'school') phaseLabel = 'الدراسة والمدرسة 🎒';
-      else if (phase === 'university') phaseLabel = 'المرحلة الجامعية 🎓';
-      else phaseLabel = 'مرحلة النضج والسعي 💼';
+        let phaseLabel = '';
+        if (phase === 'childhood') phaseLabel = 'الطفولة المبكرة 👶';
+        else if (phase === 'school') phaseLabel = 'الدراسة والمدرسة 🎒';
+        else if (phase === 'university') phaseLabel = 'المرحلة الجامعية 🎓';
+        else phaseLabel = 'مرحلة النضج والسعي 💼';
 
-      const approxDate = new Date(birth.getTime() + i * msPerWeek);
-      const dateStr = approxDate.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short' });
+        const approxDate = new Date(birth.getTime() + i * msPerWeek);
+        const dateStr = approxDate.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short' });
 
-      if (status === 'past') {
-        title = `الأسبوع ${weekIndex} من سنة ${yearIndex} — [${dateStr}] (${phaseLabel})`;
-      } else if (status === 'current') {
-        title = `أنتِ هنا الآن 🔥 (الأسبوع ${weekIndex} من سنة ${yearIndex}) — [${dateStr}]`;
-      } else {
-        title = `أسبوع مستقبلي (الأسبوع ${weekIndex} من سنة ${yearIndex}) — [${dateStr}]`;
+        let title = '';
+        if (status === 'past') {
+          title = `الأسبوع ${weekIndex} من سنة ${yearIndex} — [${dateStr}] (${phaseLabel})`;
+        } else if (status === 'current') {
+          title = `أنتِ هنا الآن 🔥 (الأسبوع ${weekIndex} من سنة ${yearIndex}) — [${dateStr}]`;
+        } else {
+          title = `أسبوع مستقبلي (الأسبوع ${weekIndex} من سنة ${yearIndex}) — [${dateStr}]`;
+        }
+
+        weeksArray.push({ index: i, status, title, phase, phaseLabel, yearIndex, weekIndex, dateStr });
       }
-
-      weeksArray.push({ index: i, status, title, phase, phaseLabel, yearIndex, weekIndex, dateStr });
     }
-  }
+    return {
+      weeksLived,
+      totalWeeks,
+      weeksRemaining,
+      percentLived,
+      ageYears,
+      ageMonths,
+      ageDays,
+      currentWeekOfYear,
+      weeksArray
+    };
+  }, [lifeData]);
+
+  // HSL visual scale gradient representing years passed
+  const getWeekStyle = (week) => {
+    if (week.status !== 'past') return {};
+
+    const maxYears = lifeData?.expectedLifespan || 69;
+    const ratio = Math.min(1, Math.max(0, (week.yearIndex - 1) / maxYears));
+
+    let h, s, l;
+    if (ratio < 0.1) { // Childhood (0 - 10%)
+      const t = ratio / 0.1;
+      h = 355 + (15 - 355) * t;
+      if (h < 0) h += 360;
+      s = 85 - 15 * t;
+      l = 86 - 6 * t;
+    } else if (ratio < 0.28) { // School (10% - 28%)
+      const t = (ratio - 0.1) / 0.18;
+      h = 15 + (45 - 15) * t;
+      s = 70 - 10 * t;
+      l = 80 - 5 * t;
+    } else if (ratio < 0.35) { // University (28% - 35%)
+      const t = (ratio - 0.28) / 0.07;
+      h = 45 + (165 - 45) * t;
+      s = 60 - 20 * t;
+      l = 75 + 2 * t;
+    } else { // Maturity (35% - 100%)
+      const t = (ratio - 0.35) / 0.65;
+      h = 165 + (210 - 165) * t;
+      s = 40 - 15 * t;
+      l = 77 - 12 * t;
+    }
+
+    return {
+      backgroundColor: `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`,
+      borderColor: `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l - 8)}%)`,
+      borderWidth: '1px',
+      borderStyle: 'solid'
+    };
+  };
+
+  // Memoize rendering of the grid cells to optimize performance
+  const gridContent = useMemo(() => {
+    return (
+      <div className="weeks-grid">
+        {weeksArray.map((week) => (
+          <div
+            key={week.index}
+            className={`week-box week-${week.status} week-box-interactive`}
+            style={getWeekStyle(week)}
+            onMouseEnter={() => setHoveredWeek(week)}
+            onMouseLeave={() => setHoveredWeek(null)}
+            onClick={() => setHoveredWeek(week)}
+            title={week.title}
+          />
+        ))}
+      </div>
+    );
+  }, [weeksArray, setHoveredWeek]);
 
   // Dynamic sentence
   let dynamicSentence = '';
@@ -203,11 +284,6 @@ const LifeWeeks = () => {
             
             {/* Scoped CSS Styles for Interactive Life Phases grid */}
             <style>{`
-              .week-past.phase-childhood { background-color: #ffccd5; border-color: #ffb3c1; }
-              .week-past.phase-school { background-color: #ffe3a0; border-color: #ffd166; }
-              .week-past.phase-university { background-color: #a8dadc; border-color: #457b9d; }
-              .week-past.phase-adult { background-color: #826E63; border-color: rgba(92, 75, 67, 0.25); }
-              
               .week-box-interactive {
                 cursor: pointer;
                 transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
@@ -248,35 +324,24 @@ const LifeWeeks = () => {
             </div>
 
             {/* Grid Container */}
-            <div className="weeks-grid">
-              {weeksArray.map((week) => (
-                <div
-                  key={week.index}
-                  className={`week-box week-${week.status} ${week.status === 'past' ? 'phase-' + week.phase : ''} week-box-interactive`}
-                  onMouseEnter={() => setHoveredWeek(week)}
-                  onMouseLeave={() => setHoveredWeek(null)}
-                  onClick={() => setHoveredWeek(week)}
-                  title={week.title}
-                />
-              ))}
-            </div>
+            {gridContent}
 
             {/* Legend / Key Details */}
             <div className="flex flex-wrap justify-center gap-md mt-lg border-t border-ui pt-md" style={{ direction: 'rtl', fontSize: '0.78rem' }}>
               <div className="flex items-center gap-xs">
-                <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: '#ffccd5', border: '1px solid #ffb3c1' }} />
+                <div className="w-3.5 h-3.5 rounded-sm" style={getWeekStyle({ status: 'past', yearIndex: 3 })} />
                 <span className="font-bold text-muted">الطفولة 👶 (0-6 سنوات)</span>
               </div>
               <div className="flex items-center gap-xs">
-                <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: '#ffe3a0', border: '1px solid #ffd166' }} />
+                <div className="w-3.5 h-3.5 rounded-sm" style={getWeekStyle({ status: 'past', yearIndex: 12 })} />
                 <span className="font-bold text-muted">المدرسة 🎒 (6-18 سنة)</span>
               </div>
               <div className="flex items-center gap-xs">
-                <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: '#a8dadc', border: '1px solid #457b9d' }} />
+                <div className="w-3.5 h-3.5 rounded-sm" style={getWeekStyle({ status: 'past', yearIndex: 20 })} />
                 <span className="font-bold text-muted">الجامعة 🎓 (18-22 سنة)</span>
               </div>
               <div className="flex items-center gap-xs">
-                <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: '#826E63', border: '1px solid rgba(92, 75, 67, 0.25)' }} />
+                <div className="w-3.5 h-3.5 rounded-sm" style={getWeekStyle({ status: 'past', yearIndex: 35 })} />
                 <span className="font-bold text-muted">النضج والسعي 💼 (22+ سنة)</span>
               </div>
               <div className="flex items-center gap-xs">

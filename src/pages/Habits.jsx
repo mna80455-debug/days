@@ -435,7 +435,7 @@ const Habits = () => {
 
       {/* 3. HABITS CHECKLIST */}
       <section className="flex flex-col gap-md animate-in animate-in-delay-4" role="list" aria-label="قائمة عاداتك اليومية">
-        {allHabits.map((habit) => {
+        {allHabits.map((habit, index) => {
           const isCompleted = completed.includes(habit.id);
           const isCustom = habit.id.toString().startsWith('custom_');
 
@@ -443,7 +443,8 @@ const Habits = () => {
             <div
               key={habit.id}
               onClick={() => handleToggleHabit(habit.id)}
-              className={`habit-card-item card p-md flex items-center justify-between flex-row-reverse text-right ${isCompleted ? 'checked' : ''}`}
+              className={`habit-card-item card p-md flex items-center justify-between flex-row-reverse text-right animate-in ${isCompleted ? 'checked' : ''}`}
+              style={{ animationDelay: `${index * 0.06}s` }}
               role="listitem"
             >
               {/* Left Side: Interaction indicator (Checkbox circle & delete if custom) */}

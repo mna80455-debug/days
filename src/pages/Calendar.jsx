@@ -228,7 +228,7 @@ const Calendar = () => {
         .calendar-days-container {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: var(--space-xs);
+          gap: var(--space-sm);
         }
         .calendar-day-cell {
           aspect-ratio: 1.1;
@@ -236,48 +236,54 @@ const Calendar = () => {
           flex-direction: column;
           align-items: flex-end;
           justify-content: space-between;
-          padding: var(--space-xs);
-          border-radius: var(--radius-sm);
-          font-weight: 600;
-          font-size: 0.88rem;
-          transition: transform 0.2s, background-color 0.2s;
+          padding: var(--space-sm);
+          border-radius: var(--radius-md);
+          font-weight: 700;
+          font-size: 0.9rem;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           cursor: pointer;
           border: 1px solid var(--border-ui);
+          box-shadow: var(--shadow-sm);
         }
         .day-empty {
           background: transparent !important;
           border-color: transparent !important;
+          box-shadow: none !important;
           cursor: default;
         }
         .day-regular {
-          background: var(--cream);
+          background: rgba(255, 255, 255, 0.45);
           color: var(--text-main);
+          backdrop-filter: blur(4px);
         }
         .day-regular:hover {
-          transform: scale(1.04);
+          transform: scale(1.06);
           border-color: var(--orange);
+          background: rgba(255, 255, 255, 0.85);
+          box-shadow: var(--shadow-md);
         }
         .day-has-events {
-          background: var(--orange) !important;
-          color: #fff !important;
-          border-color: var(--orange-hover) !important;
-          box-shadow: 0 2px 6px var(--orange-glow);
+          background: rgba(244, 162, 97, 0.12) !important;
+          color: var(--orange) !important;
+          border: 2px solid var(--orange) !important;
+          box-shadow: 0 4px 10px var(--orange-glow);
         }
         .day-has-events:hover {
-          transform: scale(1.04);
-          background: var(--orange-hover) !important;
+          transform: scale(1.06);
+          background: rgba(244, 162, 97, 0.22) !important;
+          box-shadow: 0 6px 15px var(--orange-glow);
         }
         .event-indicator-dots {
           display: flex;
-          gap: 2px;
+          gap: 3px;
           justify-content: center;
           width: 100%;
         }
         .dot {
-          width: 4px;
-          height: 4px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
-          background: #fff;
+          background: var(--orange);
         }
         .pulse-upcoming {
           animation: pulseHighlight 2s infinite;
@@ -311,7 +317,7 @@ const Calendar = () => {
       </header>
 
       {/* Calendar monthly card */}
-      <div className="card animate-in animate-in-delay-2 flex flex-col gap-md">
+      <div key={`${month}-${year}`} className="card animate-in flex flex-col gap-md">
         
         {/* Month Navigation */}
         <div className="flex justify-between items-center w-full pb-xs border-b border-ui">
