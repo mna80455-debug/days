@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db, isMock } from '../firebase/config';
 import { collection, getDocs } from 'firebase/firestore';
-import { PieChart, ChevronLeft, Award, Sun, Moon } from 'lucide-react';
+import { PieChart, ChevronLeft, Award, Sun, Moon, Sparkles } from 'lucide-react';
 
 const Statistics = () => {
   const { currentUser } = useAuth();
@@ -14,6 +14,8 @@ const Statistics = () => {
   const [evenings, setEvenings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState(7); // 7 or 30 days
+  const [aiWeeklyAnalysis, setAiWeeklyAnalysis] = useState('');
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   const generateMockStatsIfEmpty = (uid) => {
     const dates = [];
@@ -117,6 +119,84 @@ const Statistics = () => {
 
     loadData();
   }, [currentUser]);
+
+  const generateWeeklyAIAnalysis = async () => {
+    if (mornings.length === 0) return;
+    setLoadingAnalysis(true);
+
+    const userName = currentUser?.displayName || 'صديقتي';
+    const recentMornings = mornings.slice(0, 7);
+    const moodSummary = recentMornings.map(m => `- يوم ${m.date}: كان المزاج [${m.mood}] والهدف الأساسي هو [${m.topTask || 'لا يوجد'}].`).join('\n');
+
+    const prompt = `أنت طبيب نفسي دافئ ومستشار عاطفي لتطبيق "أيام". اكتب رسالة تحليلية دافئة ومخصصة باللغة العربية موجهة لـ "${userName}" بناءً على تدويناتها وسلوكها المزاجي والأهداف الأسبوعية التالية للأيام السبعة الماضية:\n${moodSummary}\n\nيرجى صياغة الرسالة بأسلوب هادئ، داعم، ومريح نفسياً جداً. لا تعطي أرقاماً أو نسباً جافة، بل ركز على فهم مشاعرها، تشجيعها، ونصحها برفق شديد (مثل اقتراح تمارين تنفس أو أنشطة معينة تناسب حالتها العامة). لا تتجاوز 4-5 أسطر. لا تستخدم كلمة "رسالة" ولا تضع النص داخل علامات اقتباس خارجية.`;
+
+    const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+    if (groqApiKey) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-8b-instant',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 250
+          })
+        });
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content?.trim();
+        if (text) {
+          setAiWeeklyAnalysis(text.replace(/^["'«“”]+|["'»“”]+$/g, ''));
+          setLoadingAnalysis(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to generate Groq weekly analysis:', err);
+      }
+    } else if (geminiApiKey) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          }
+        );
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) {
+          setAiWeeklyAnalysis(text.replace(/^["'«“”]+|["'»“”]+$/g, ''));
+          setLoadingAnalysis(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to generate Gemini weekly analysis:', err);
+      }
+    }
+
+    // Fallback rule-based analysis
+    const breakdown = getMoodBreakdown();
+    const dominantMood = Object.keys(breakdown.counts).reduce((a, b) => 
+      breakdown.counts[a] > breakdown.counts[b] ? a : b, 'هادئة'
+    );
+    
+    const fallbacks = {
+      'متحمسة': `عزيزتي ${userName}، يبدو أن هذا الأسبوع كان مليئاً بالطاقة والشغف والإنجاز! حماسكِ رائع لبدء أشياء جديدة، لكن ركّزي أيضاً على أخذ فترات راحة قصيرة لكي لا تستهلكي طاقتكِ بالكامل. نحن فخورون جداً بسعيكِ المستمر ✨.`,
+      'ممتنة': `عزيزتي ${userName}، أسبوعكِ كان مليئاً بالسلام والرضا والامتنان للتفاصيل الصغيرة. هذا الحضور الذهني الدافئ هو أثمن ما تملكين. استمري في تدوين لحظاتكِ السعيدة لكي تظل بوصلتكِ دائماً تشير للسلام الداخلي 🌸.`,
+      'هادئة': `عزيزتي ${userName}، يظهر سجل مشاعركِ حضوراً واعياً وهدوءاً تاماً هذا الأسبوع. قدرتكِ على مواجهة الحياة بسكينة وتأنٍ هو أسمى مراتب الحكمة. واصلي جلسات التأمل والتنفس، فهي درعكِ الحقيقي 🍃.`,
+      'مرهقة': `عزيزتي ${userName}، نلاحظ أنكِ مررتِ بأيام مرهقة وثقيلة مؤخراً. رفقاً بنفسكِ يا صديقتي، التعب ليس نهاية المطاف بل هو منبه يخبركِ أن جسدكِ وروحكِ يحتاجان للراحة والبطء. خذي وقتاً طويلاً للنوم الهادئ والابتعاد عن التشتت الرقمي 🕊️.`,
+    };
+    
+    const finalAdvice = fallbacks[dominantMood] || `عزيزتي ${userName}، استمراركِ في تدوين رحلتكِ هو أكبر خطوة للعناية بذاتكِ. دعي أيامكِ تنساب برفق وتذكري أن كل خطوة صغيرة واعية تصنع فارقاً كبيراً في توازنكِ الداخلي ✨.`;
+    setAiWeeklyAnalysis(finalAdvice);
+    setLoadingAnalysis(false);
+  };
 
   const totalDocumentedDays = new Set([
     ...mornings.map(m => m.date),
@@ -533,6 +613,39 @@ const Statistics = () => {
           </div>
         </section>
       )}
+
+      {/* AI Weekly Emotional Climate Letter */}
+      <section className="card animate-in animate-in-delay-3" style={{ width: '100%', marginBottom: 'var(--space-lg)', textAlign: 'right', background: 'var(--bg-card)', border: '1px solid var(--border-ui)' }}>
+        <h3 className="font-bold text-lg mb-sm flex items-center justify-end gap-xs" style={{ borderBottom: '1px solid var(--border-ui)', paddingBottom: 'var(--space-sm)' }}>
+          <Sparkles size={18} className="text-accent" style={{ marginLeft: '6px' }} />
+          <span>تحليل المشاعر الأسبوعي بالذكاء الاصطناعي 🤖✨</span>
+        </h3>
+        <p className="text-xs text-muted mb-md">
+          يقوم الذكاء الاصطناعي بتحليل مزاجكِ وأهدافكِ للأيام السبعة الماضية ليكتب لكِ رسالة دافئة تُعبر عن تفهم حالتكِ وتقترح نصائح رقيقة لسلامكِ الداخلي.
+        </p>
+
+        {aiWeeklyAnalysis ? (
+          <div className="p-md rounded-md bg-cream/40 border border-dashed border-accent/50 text-right font-bold" style={{ fontStyle: 'italic', lineHeight: '1.8', fontSize: '1rem', color: 'var(--text-main)' }}>
+            "{aiWeeklyAnalysis}"
+          </div>
+        ) : (
+          <div className="flex justify-center p-md">
+            {loadingAnalysis ? (
+              <span className="loader loader-sm" />
+            ) : (
+              <button 
+                type="button" 
+                onClick={generateWeeklyAIAnalysis} 
+                className="btn-primary" 
+                style={{ width: 'auto', padding: '10px 20px', fontSize: '0.85rem' }}
+                disabled={mornings.length === 0}
+              >
+                توليد رسالة الدعم الأسبوعية 🧠✨
+              </button>
+            )}
+          </div>
+        )}
+      </section>
 
       <div className="page-grid animate-in animate-in-delay-3">
         

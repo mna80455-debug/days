@@ -14,6 +14,8 @@ import Onboarding from './pages/Onboarding';
 import LifeWeeks from './pages/LifeWeeks';
 import CalendarPage from './pages/Calendar'; // Called CalendarPage to avoid clashing with React global/built-in objects if needed
 import Habits from './pages/Habits';
+import Refuge from './pages/Refuge';
+import Sleep from './pages/Sleep';
 
 // Auth Guard Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -56,6 +58,8 @@ function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="life-weeks" element={<LifeWeeks />} />
               <Route path="habits" element={<Habits />} />
+              <Route path="refuge" element={<Refuge />} />
+              <Route path="sleep" element={<Sleep />} />
             </Route>
 
             {/* Fallback redirect */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Settings, LogOut, Sun, Coffee, Moon, PieChart, Image, LayoutDashboard, Bell, X, Hourglass, Calendar, Sparkles } from 'lucide-react';
+import { Settings, LogOut, Sun, Coffee, Moon, PieChart, Image, LayoutDashboard, Bell, X, Hourglass, Calendar, Sparkles, HeartHandshake, MoonStar } from 'lucide-react';
 import { checkAndTriggerNotifications } from '../utils/notificationScheduler';
 
 const Layout = () => {
@@ -81,6 +81,8 @@ const Layout = () => {
     { path: '/memories', label: 'الذكريات', icon: Image },
     { path: '/calendar', label: 'تقويمي', icon: Calendar },
     { path: '/habits', label: 'عاداتي', icon: Sparkles },
+    { path: '/refuge', label: 'صندوق الدعم', icon: HeartHandshake },
+    { path: '/sleep', label: 'النوم الهادئ', icon: MoonStar },
     { path: '/statistics', label: 'الإحصائيات', icon: PieChart },
     { path: '/life-weeks', label: 'عمري', icon: Hourglass },
   ];

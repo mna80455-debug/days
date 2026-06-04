@@ -3,11 +3,24 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { db, isMock } from '../firebase/config';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Sun, Moon, BookOpen, Calendar, Award, Play, Pause, RotateCcw, X, Heart, Flame, TrendingUp, Compass, Check, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { CATEGORIES } from './Morning';
 
 /* ── helpers ─────────────────────────────── */
+
+const affirmations = [
+  "أنا أستحق السلام والراحة اليوم وكل يوم.",
+  "جهدي الصغير اليوم كافٍ تماماً، وأنا فخورة بسعيي.",
+  "أنا أتقبل نفسي كما أنا الآن بكل رفق وحب.",
+  "عقلي هادئ، وجسدي مسترخٍ، وروحي مطمئنة.",
+  "أمتلك القوة لتجاوز أي عاصفة خارجية بسلام داخلي.",
+  "كل نفس آخذه الآن يملأ جسدي بالهدوء والسكينة.",
+  "أنا أسامح نفسي على أخطاء الماضي وأركز على جمال الحاضر.",
+  "اليوم، أختار أن أكون لطيفة مع ذاتي وأتجنب الضغط الزائد.",
+  "أنا محمية ومحاطة بالسلام والهدوء في مساحتي الخاصة.",
+  "حياتي تمضي بمرونة، وأنا أثق بمسار رحلتي."
+];
 
 /** Return "YYYY-MM-DD" for a Date object */
 const toDateKey = (d) => {
@@ -63,6 +76,11 @@ const Dashboard = () => {
   const [closestEvent, setClosestEvent] = useState(null);
   const [habitsCount, setHabitsCount] = useState({ completed: 0, total: 5, percent: 0 });
 
+  /* Vision Board and Affirmation states */
+  const [visionImages, setVisionImages] = useState(Array(6).fill(''));
+  const [showWallpaperModal, setShowWallpaperModal] = useState(false);
+  const [uploadingSlot, setUploadingSlot] = useState(null);
+
   /* AI quote states */
   const [aiQuote, setAiQuote] = useState('');
   const [loadingQuote, setLoadingQuote] = useState(false);
@@ -92,6 +110,142 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  /* load vision board images */
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const loadVisionBoard = async () => {
+      let imagesList = Array(6).fill('');
+
+      if (isMock) {
+        const saved = localStorage.getItem(`days_vision_board_${currentUser.uid}`);
+        if (saved) {
+          imagesList = JSON.parse(saved);
+        }
+      } else {
+        try {
+          const docRef = doc(db, 'users', currentUser.uid, 'settings', 'vision_board');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists() && docSnap.data().images) {
+            imagesList = docSnap.data().images;
+          }
+        } catch (err) {
+          console.error('Error loading vision board:', err);
+        }
+      }
+      
+      const padded = [...imagesList, ...Array(6).fill('')].slice(0, 6);
+      setVisionImages(padded);
+    };
+
+    loadVisionBoard();
+  }, [currentUser]);
+
+  const handleUploadVisionImage = async (slotIndex, event) => {
+    const file = event.target.files[0];
+    if (!file || !currentUser) return;
+
+    setUploadingSlot(slotIndex);
+
+    const compressImage = (imgFile) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 300;
+            const MAX_HEIGHT = 300;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(imgFile);
+      });
+    };
+
+    try {
+      let finalUrl = '';
+      
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || localStorage.getItem(`days_cloudinary_cloud_name_${currentUser.uid}`);
+      const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || localStorage.getItem(`days_cloudinary_upload_preset_${currentUser.uid}`);
+
+      if (cloudName && preset) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', preset);
+
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        finalUrl = data.secure_url;
+      } else {
+        finalUrl = await compressImage(file);
+      }
+
+      if (finalUrl) {
+        const updated = [...visionImages];
+        updated[slotIndex] = finalUrl;
+        setVisionImages(updated);
+
+        if (isMock) {
+          localStorage.setItem(`days_vision_board_${currentUser.uid}`, JSON.stringify(updated));
+        } else {
+          const docRef = doc(db, 'users', currentUser.uid, 'settings', 'vision_board');
+          await setDoc(docRef, { images: updated }, { merge: true });
+        }
+      }
+    } catch (err) {
+      console.error('Vision board image upload failed:', err);
+      alert('فشل رفع الصورة للوحة الرؤية.');
+    } finally {
+      setUploadingSlot(null);
+    }
+  };
+
+  const handleRemoveVisionImage = async (slotIndex) => {
+    const updated = [...visionImages];
+    updated[slotIndex] = '';
+    setVisionImages(updated);
+
+    try {
+      if (isMock) {
+        localStorage.setItem(`days_vision_board_${currentUser.uid}`, JSON.stringify(updated));
+      } else {
+        const docRef = doc(db, 'users', currentUser.uid, 'settings', 'vision_board');
+        await setDoc(docRef, { images: updated }, { merge: true });
+      }
+    } catch (err) {
+      console.error('Error removing vision image:', err);
+    }
+  };
+
+  const handleCopyAffirmation = () => {
+    navigator.clipboard.writeText(dailyAffirmation);
+    alert('تم نسخ توكيد اليوم لروحكِ 🌸✨');
+  };
+
   /* meditation timer */
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(TOTAL_SECONDS);
@@ -106,6 +260,7 @@ const Dashboard = () => {
   const totalDaysInYear = now.getFullYear() % 4 === 0 ? 366 : 365;
   const daysRemaining = totalDaysInYear - dayOfYear;
   const percentOfYearPassed = Math.round((dayOfYear / totalDaysInYear) * 100);
+  const dailyAffirmation = affirmations[dayOfYear % affirmations.length];
 
   /* daily quote */
   const dailyQuotes = [
@@ -706,6 +861,23 @@ const Dashboard = () => {
         <p>لترى كيف مضت رحلتك اليوم.</p>
       </section>
 
+      {/* Daily Affirmation Banner */}
+      <div className="card my-md p-md text-center animate-in animate-in-delay-1" style={{ border: '1px dashed var(--orange)', background: 'linear-gradient(135deg, rgba(244, 162, 97, 0.08) 0%, rgba(226, 149, 120, 0.08) 100%)' }}>
+        <span className="text-xs text-muted font-bold flex items-center gap-xs justify-center mb-xs">
+          <Sparkles size={14} className="text-accent" />
+          توكيد اليوم لسكينتكِ 🌸
+        </span>
+        <p className="text-lg font-black text-main my-sm">"{dailyAffirmation}"</p>
+        <div className="flex justify-center gap-sm mt-sm">
+          <button onClick={handleCopyAffirmation} className="btn-secondary text-xs" style={{ padding: '4px 10px', width: 'auto', border: '1px solid var(--border-ui)' }}>
+            نسخ التوكيد 🔗
+          </button>
+          <button onClick={() => setShowWallpaperModal(true)} className="btn-primary text-xs" style={{ padding: '4px 10px', width: 'auto' }}>
+            عرض كخلفية للجوال 📱
+          </button>
+        </div>
+      </div>
+
       {/* ─── 2. DAILY JOURNEY TIMELINE (خط الزمن لليوم) ─── */}
       <div className="card animate-in animate-in-delay-1" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)', padding: 'var(--space-2xl)', background: 'var(--bg-card)' }}>
         <style>{`
@@ -733,6 +905,27 @@ const Dashboard = () => {
             background: linear-gradient(135deg, var(--green) 0%, #1d7065 100%) !important;
             border-color: var(--green) !important;
             box-shadow: 0 0 10px rgba(42, 157, 143, 0.35) !important;
+          }
+          .vision-board-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: var(--space-md);
+            margin-top: var(--space-md);
+          }
+          @media (max-width: 768px) {
+            .vision-board-grid {
+              grid-template-columns: repeat(3, 1fr);
+            }
+          }
+          @media (max-width: 480px) {
+            .vision-board-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+          .vision-slot:hover {
+            transform: translateY(-2.5px);
+            border-color: var(--orange) !important;
+            box-shadow: var(--shadow-md);
           }
         `}</style>
         
@@ -1088,6 +1281,92 @@ const Dashboard = () => {
         </Link>
       </div>
 
+      {/* ─── Vision Board (لوحة الرؤية والتركيز) ─── */}
+      <section className="card animate-in animate-in-delay-4" style={{ width: '100%', padding: 'var(--space-2xl)', background: 'var(--bg-card)' }}>
+        <h3 className="flex items-center gap-sm" style={{ borderBottom: '1px solid var(--border-ui)', paddingBottom: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+          <Sparkles size={20} className="text-accent" />
+          <span>لوحة الرؤية والتركيز 🖼️✨</span>
+        </h3>
+        <p className="text-sm text-muted mb-md">أضيفي صوراً تُمثّل أحلامكِ وأهدافكِ لتذكّرها والتركيز عليها يومياً.</p>
+
+        <div className="vision-board-grid">
+          {visionImages.map((imgUrl, index) => (
+            <div 
+              key={index} 
+              className="vision-slot"
+              style={{
+                position: 'relative',
+                aspectRatio: '1',
+                borderRadius: 'var(--radius-lg)',
+                overflow: 'hidden',
+                border: '2px dashed var(--border-ui)',
+                background: 'var(--input-bg)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+                cursor: imgUrl ? 'default' : 'pointer'
+              }}
+            >
+              {imgUrl ? (
+                <>
+                  <img 
+                    src={imgUrl} 
+                    alt={`حلم ${index + 1}`} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <button 
+                    onClick={() => handleRemoveVisionImage(index)}
+                    className="remove-btn"
+                    aria-label="مسح الصورة"
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      background: 'rgba(230, 57, 70, 0.9)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '26px',
+                      height: '26px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      transition: 'opacity 0.2s',
+                      zIndex: 10
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                </>
+              ) : (
+                <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: 'var(--space-xs)', padding: 'var(--space-sm)' }}>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => handleUploadVisionImage(index, e)}
+                    style={{ display: 'none' }}
+                    disabled={uploadingSlot !== null}
+                  />
+                  {uploadingSlot === index ? (
+                    <span className="loader loader-sm" />
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '1.6rem' }}>📸</span>
+                      <span className="text-[11px] font-bold text-muted">أضيفي حلمكِ</span>
+                    </>
+                  )}
+                </label>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ─── 5. STATS ROW ─── */}
       <div className="page-grid animate-in animate-in-delay-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="card-solid text-center">
@@ -1285,6 +1564,127 @@ const Dashboard = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* ═══════════════ WALLPAPER AFFIRMATION MODAL ═══════════════ */}
+      {showWallpaperModal && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="توكيدكِ كخلفية شاشة"
+        >
+          <div className="modal animate-scale" style={{ textAlign: 'center', maxWidth: '400px', padding: 'var(--space-xl)' }}>
+            {/* Close */}
+            <div className="flex justify-between items-center mb-md">
+              <h3 className="font-bold text-md" style={{ margin: 0 }}>خلفية توكيد اليوم 📱✨</h3>
+              <button
+                className="btn-icon"
+                onClick={() => setShowWallpaperModal(false)}
+                aria-label="إغلاق المعاينة"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted mb-md">يمكنكِ أخذ لقطة شاشة (Screenshot) لحفظ هذه اللوحة اللطيفة كخلفية لهاتفكِ وتذكّر توكيدكِ دوماً.</p>
+
+            {/* Smartphone Frame Preview */}
+            <div 
+              id="wallpaper-preview-frame"
+              style={{
+                width: '240px',
+                height: '420px',
+                margin: '0 auto var(--space-lg) auto',
+                borderRadius: '32px',
+                border: '8px solid var(--brown)',
+                boxShadow: 'var(--shadow-lg)',
+                position: 'relative',
+                overflow: 'hidden',
+                background: 'linear-gradient(180deg, #F4A261 0%, #D8A7B1 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                padding: 'var(--space-2xl) var(--space-lg) var(--space-2xl) var(--space-lg)',
+                color: 'white',
+                textAlign: 'center',
+                boxSizing: 'border-box'
+              }}
+            >
+              {/* Phone Notch/Status Bar info */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.65rem', fontWeight: 'bold', opacity: 0.8 }}>
+                <span>٠٩:٤١</span>
+                <div style={{ width: '40px', height: '14px', borderRadius: '7px', background: 'var(--brown)', margin: '-16px auto 0 auto', position: 'absolute', left: 'calc(50% - 20px)' }} />
+                <span style={{ display: 'flex', gap: '2px' }}>📶 🔋</span>
+              </div>
+
+              {/* Center content */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 'var(--space-md)' }}>
+                <span style={{ fontSize: '2.5rem' }}>🌸</span>
+                <p 
+                  style={{ 
+                    fontFamily: 'var(--font-arabic)', 
+                    fontSize: '1.2rem', 
+                    fontWeight: '900', 
+                    lineHeight: '1.8',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    margin: 0,
+                    padding: '0 var(--space-sm)'
+                  }}
+                >
+                  "{dailyAffirmation}"
+                </p>
+                <div style={{ width: '30px', height: '2px', background: 'white', opacity: 0.6, margin: 'var(--space-sm) 0' }} />
+                <span style={{ fontSize: '0.7rem', fontWeight: 'bold', letterSpacing: '2px', opacity: 0.9 }}>تطبيق أيام</span>
+              </div>
+
+              {/* Bottom decorative hint */}
+              <div style={{ fontSize: '0.6rem', opacity: 0.7 }}>
+                تنفسي بعمق • أنتِ بأمان
+              </div>
+            </div>
+
+            {/* Customization Options */}
+            <div className="flex flex-col gap-xs mt-md">
+              <span className="text-xs text-muted font-bold">تغيير لون الخلفية:</span>
+              <div className="flex gap-sm justify-center mt-xs">
+                {[
+                  { name: 'غروب دافئ', grad: 'linear-gradient(180deg, #F4A261 0%, #D8A7B1 100%)' },
+                  { name: 'صباح هادئ', grad: 'linear-gradient(180deg, #A8DADC 0%, #FEE8A8 100%)' },
+                  { name: 'ليلكي حالم', grad: 'linear-gradient(180deg, #6D597A 0%, #B5A2C4 100%)' },
+                  { name: 'عشب رطب', grad: 'linear-gradient(180deg, #2a9d8f 0%, #E8DDD0 100%)' }
+                ].map((bgOption, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      const frame = document.getElementById('wallpaper-preview-frame');
+                      if (frame) frame.style.background = bgOption.grad;
+                    }}
+                    className="badge text-xs"
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      border: '1px solid var(--border-ui)',
+                      background: 'var(--bg-card-solid)',
+                      color: 'var(--text-main)'
+                    }}
+                  >
+                    {bgOption.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button 
+              onClick={handleCopyAffirmation}
+              className="btn-primary w-full mt-lg"
+              style={{ padding: '10px' }}
+            >
+              نسخ نص التوكيد 📋
+            </button>
           </div>
         </div>
       )}
