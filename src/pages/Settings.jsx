@@ -36,63 +36,78 @@ const Settings = () => {
   const [testSent, setTestSent] = useState(false);
   const [testingWhatsapp, setTestingWhatsapp] = useState(false);
   const [permissionState, setPermissionState] = useState('default');
+  const [renderError, setRenderError] = useState(null);
 
   useEffect(() => {
     if (!currentUser) return;
     
-    if ('Notification' in window) {
-      setPermissionState(Notification.permission);
+    try {
+      if ('Notification' in window) {
+        setPermissionState(Notification.permission);
+      }
+    } catch (e) {
+      console.warn('Error reading Notification permission:', e);
     }
 
     const loadSettings = async () => {
-      setLoading(true);
-      if (isMock) {
-        const saved = localStorage.getItem(`days_notification_settings_${currentUser.uid}`);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setMorningEnabled(parsed.morningEnabled ?? true);
-          setMorningTime(parsed.morningTime || '07:00');
-          setEveningEnabled(parsed.eveningEnabled ?? true);
-          setEveningTime(parsed.eveningTime || '21:00');
-          
-          setWhatsappEnabled(parsed.whatsappEnabled ?? false);
-          setWhatsappPhone(parsed.whatsappPhone || '');
-          setWhatsappApiKey(parsed.whatsappApiKey || '');
-          setWhatsappMorningEnabled(parsed.whatsappMorningEnabled ?? false);
-          setWhatsappMorningTime(parsed.whatsappMorningTime || '08:00');
-          setWhatsappEveningEnabled(parsed.whatsappEveningEnabled ?? false);
-          setWhatsappEveningTime(parsed.whatsappEveningTime || '22:00');
-          setCloudinaryCloudName(parsed.cloudinaryCloudName || '');
-          setCloudinaryUploadPreset(parsed.cloudinaryUploadPreset || '');
-          setMindfulRemindersEnabled(parsed.mindfulRemindersEnabled ?? false);
-        }
-      } else {
-        try {
-          const docRef = doc(db, 'users', currentUser.uid, 'notificationSettings', 'current');
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setMorningEnabled(data.morningEnabled ?? true);
-            setMorningTime(data.morningTime || '07:00');
-            setEveningEnabled(data.eveningEnabled ?? true);
-            setEveningTime(data.eveningTime || '21:00');
-            
-            setWhatsappEnabled(data.whatsappEnabled ?? false);
-            setWhatsappPhone(data.whatsappPhone || '');
-            setWhatsappApiKey(data.whatsappApiKey || '');
-            setWhatsappMorningEnabled(data.whatsappMorningEnabled ?? false);
-            setWhatsappMorningTime(data.whatsappMorningTime || '08:00');
-            setWhatsappEveningEnabled(data.whatsappEveningEnabled ?? false);
-            setWhatsappEveningTime(data.whatsappEveningTime || '22:00');
-            setCloudinaryCloudName(data.cloudinaryCloudName || '');
-            setCloudinaryUploadPreset(data.cloudinaryUploadPreset || '');
-            setMindfulRemindersEnabled(data.mindfulRemindersEnabled ?? false);
+      try {
+        setLoading(true);
+        if (isMock) {
+          const saved = localStorage.getItem(`days_notification_settings_${currentUser.uid}`);
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              setMorningEnabled(parsed.morningEnabled ?? true);
+              setMorningTime(parsed.morningTime || '07:00');
+              setEveningEnabled(parsed.eveningEnabled ?? true);
+              setEveningTime(parsed.eveningTime || '21:00');
+              
+              setWhatsappEnabled(parsed.whatsappEnabled ?? false);
+              setWhatsappPhone(parsed.whatsappPhone || '');
+              setWhatsappApiKey(parsed.whatsappApiKey || '');
+              setWhatsappMorningEnabled(parsed.whatsappMorningEnabled ?? false);
+              setWhatsappMorningTime(parsed.whatsappMorningTime || '08:00');
+              setWhatsappEveningEnabled(parsed.whatsappEveningEnabled ?? false);
+              setWhatsappEveningTime(parsed.whatsappEveningTime || '22:00');
+              setCloudinaryCloudName(parsed.cloudinaryCloudName || '');
+              setCloudinaryUploadPreset(parsed.cloudinaryUploadPreset || '');
+              setMindfulRemindersEnabled(parsed.mindfulRemindersEnabled ?? false);
+            } catch (jsonErr) {
+              console.error('Error parsing notification settings JSON:', jsonErr);
+            }
           }
-        } catch (err) {
-          console.error('Error loading notification settings:', err);
+        } else {
+          try {
+            const docRef = doc(db, 'users', currentUser.uid, 'notificationSettings', 'current');
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              setMorningEnabled(data.morningEnabled ?? true);
+              setMorningTime(data.morningTime || '07:00');
+              setEveningEnabled(data.eveningEnabled ?? true);
+              setEveningTime(data.eveningTime || '21:00');
+              
+              setWhatsappEnabled(data.whatsappEnabled ?? false);
+              setWhatsappPhone(data.whatsappPhone || '');
+              setWhatsappApiKey(data.whatsappApiKey || '');
+              setWhatsappMorningEnabled(data.whatsappMorningEnabled ?? false);
+              setWhatsappMorningTime(data.whatsappMorningTime || '08:00');
+              setWhatsappEveningEnabled(data.whatsappEveningEnabled ?? false);
+              setWhatsappEveningTime(data.whatsappEveningTime || '22:00');
+              setCloudinaryCloudName(data.cloudinaryCloudName || '');
+              setCloudinaryUploadPreset(data.cloudinaryUploadPreset || '');
+              setMindfulRemindersEnabled(data.mindfulRemindersEnabled ?? false);
+            }
+          } catch (err) {
+            console.error('Error loading notification settings:', err);
+          }
         }
+      } catch (err) {
+        console.error('Error in loadSettings hook:', err);
+        setRenderError(err.message + '\n' + err.stack);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadSettings();
@@ -231,6 +246,16 @@ const Settings = () => {
       setMindfulRemindersEnabled(false);
     }
   };
+
+  if (renderError) {
+    return (
+      <div className="card text-right bg-red-50 border-red-500 p-lg m-lg" style={{ direction: 'ltr', textAlign: 'left', maxWidth: '600px', margin: '20px auto' }}>
+        <h3 className="text-red-700 font-bold mb-md">Debugging Error Log (Settings):</h3>
+        <pre style={{ whiteSpace: 'pre-wrap', color: '#ff4d4f', fontSize: '0.85rem', fontFamily: 'monospace' }}>{renderError}</pre>
+        <button onClick={() => setRenderError(null)} className="btn-primary mt-md" style={{ width: 'auto' }}>Dismiss</button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
