@@ -1,5 +1,5 @@
 import { db, isMock } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 // Helper to convert date to YYYY-MM-DD
 const toDateKey = (d) => {
