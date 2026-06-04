@@ -45,6 +45,116 @@ const Layout = () => {
     return () => clearInterval(interval);
   }, [currentUser]);
 
+  /* ── Background canvas animation (Stars & Blobs) ── */
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const stars = Array.from({ length: 40 }).map(() => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      radius: Math.random() * 1.5 + 0.4,
+      alpha: Math.random(),
+      speed: Math.random() * 0.015 + 0.005
+    }));
+
+    const blobs = Array.from({ length: 3 }).map((_, i) => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      radius: Math.random() * 150 + 100,
+      dx: (Math.random() - 0.5) * 0.4,
+      dy: (Math.random() - 0.5) * 0.4,
+      color: i === 0 ? 'rgba(244, 162, 97, 0.04)' : i === 1 ? 'rgba(216, 167, 177, 0.05)' : 'rgba(168, 218, 220, 0.04)'
+    }));
+
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (theme === 'evening') {
+        ctx.fillStyle = '#ffffff';
+        stars.forEach(star => {
+          star.alpha += star.speed;
+          if (star.alpha > 1 || star.alpha < 0) star.speed = -star.speed;
+          ctx.globalAlpha = Math.max(0.1, Math.min(1, star.alpha));
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      } else {
+        blobs.forEach(blob => {
+          blob.x += blob.dx;
+          blob.y += blob.dy;
+          if (blob.x < -150 || blob.x > canvas.width + 150) blob.dx = -blob.dx;
+          if (blob.y < -150 || blob.y > canvas.height + 150) blob.dy = -blob.dy;
+
+          ctx.fillStyle = blob.color;
+          ctx.beginPath();
+          ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [theme]);
+
+  /* ── Desktop Mindful Reminders Scheduler ── */
+  useEffect(() => {
+    if (!currentUser) return;
+
+    let notificationTimer;
+    
+    const checkAndShowReminder = () => {
+      const settingsKey = `days_notification_settings_${currentUser.uid}`;
+      const savedSettings = localStorage.getItem(settingsKey);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.mindfulRemindersEnabled && 'Notification' in window && Notification.permission === 'granted') {
+          const prompts = [
+            "خذي نفساً عميقاً الآن يا صديقتي... زفير طويل 🌸",
+            "كيف حال ظهركِ وكتفيكِ الآن؟ رخي عضلاتكِ برفق 🌿",
+            "هل شربتِ كوب ماء في الساعات الأخيرة؟ ترطيب جسدكِ مهم 💧",
+            "توقفي لدقيقة واحدة واستشعري اللحظة الحالية بكل حضور 🙏",
+            "أنتِ تبذلين جهداً رائعاً. رفقاً بنفسكِ وخذي استراحة وعي قصيرة ✨"
+          ];
+          const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+          
+          new Notification("أيام 🌸", {
+            body: randomPrompt,
+            icon: '/icon-192.png',
+            dir: 'rtl'
+          });
+        }
+      }
+    };
+
+    notificationTimer = setInterval(checkAndShowReminder, 9000000); // 2.5 hours
+    const initialTimer = setTimeout(checkAndShowReminder, 90000); // 1.5 minutes test trigger
+
+    return () => {
+      clearInterval(notificationTimer);
+      clearTimeout(initialTimer);
+    };
+  }, [currentUser]);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -95,6 +205,16 @@ const Layout = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-gradient)', transition: 'background 0.5s ease' }}>
+
+      <canvas 
+        ref={canvasRef} 
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0
+        }}
+      />
 
       {/* Skip to content - accessibility */}
       <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>

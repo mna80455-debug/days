@@ -39,6 +39,100 @@ const Refuge = () => {
   /* Affirmation Cards states */
   const [cardIndex, setCardIndex] = useState(0);
 
+  /* Breathing sound references */
+  const breathCtxRef = useRef(null);
+  const breathOscRef = useRef(null);
+  const breathGainRef = useRef(null);
+
+  const stopBreathAudio = () => {
+    try {
+      if (breathOscRef.current) {
+        breathOscRef.current.stop();
+        breathOscRef.current = null;
+      }
+      if (breathGainRef.current) {
+        breathGainRef.current.disconnect();
+        breathGainRef.current = null;
+      }
+    } catch (e) {
+      console.error("Failed to stop breath audio:", e);
+    }
+  };
+
+  const startBreathAudio = () => {
+    stopBreathAudio();
+    try {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtxClass) return;
+      const ctx = new AudioCtxClass();
+      breathCtxRef.current = ctx;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(110, ctx.currentTime);
+
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.frequency.value = 0.25; 
+      lfoGain.gain.value = 0.01;
+
+      lfo.connect(lfoGain);
+      lfoGain.connect(gain.gain);
+
+      gain.gain.setValueAtTime(0.01, ctx.currentTime);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      lfo.start();
+
+      breathOscRef.current = osc;
+      breathGainRef.current = gain;
+    } catch (e) {
+      console.error("Failed to start breath audio:", e);
+    }
+  };
+
+  /* Cleanup on unmount */
+  useEffect(() => {
+    return () => {
+      stopBreathAudio();
+    };
+  }, []);
+
+  /* Modulate breathing audio volume based on phase */
+  useEffect(() => {
+    if (breathPhase === 'idle') {
+      stopBreathAudio();
+      return;
+    }
+
+    if (!breathGainRef.current) {
+      startBreathAudio();
+    }
+
+    const ctx = breathCtxRef.current;
+    const gainNode = breathGainRef.current;
+    if (!ctx || !gainNode) return;
+
+    if (breathPhase === 'inhale') {
+      gainNode.gain.cancelScheduledValues(ctx.currentTime);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 3.8);
+    } else if (breathPhase === 'hold') {
+      gainNode.gain.cancelScheduledValues(ctx.currentTime);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 1.0);
+    } else if (breathPhase === 'exhale') {
+      gainNode.gain.cancelScheduledValues(ctx.currentTime);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.005, ctx.currentTime + 7.8);
+    }
+  }, [breathPhase]);
+
   /* Web Audio Synthesizer for Worry Fade sound effect */
   const playReleaseSound = () => {
     try {

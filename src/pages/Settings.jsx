@@ -28,6 +28,7 @@ const Settings = () => {
   // Cloudinary Settings states
   const [cloudinaryCloudName, setCloudinaryCloudName] = useState('');
   const [cloudinaryUploadPreset, setCloudinaryUploadPreset] = useState('');
+  const [mindfulRemindersEnabled, setMindfulRemindersEnabled] = useState(false);
 
   // UI states
   const [loading, setLoading] = useState(true);
@@ -63,6 +64,7 @@ const Settings = () => {
           setWhatsappEveningTime(parsed.whatsappEveningTime || '22:00');
           setCloudinaryCloudName(parsed.cloudinaryCloudName || '');
           setCloudinaryUploadPreset(parsed.cloudinaryUploadPreset || '');
+          setMindfulRemindersEnabled(parsed.mindfulRemindersEnabled ?? false);
         }
       } else {
         try {
@@ -84,6 +86,7 @@ const Settings = () => {
             setWhatsappEveningTime(data.whatsappEveningTime || '22:00');
             setCloudinaryCloudName(data.cloudinaryCloudName || '');
             setCloudinaryUploadPreset(data.cloudinaryUploadPreset || '');
+            setMindfulRemindersEnabled(data.mindfulRemindersEnabled ?? false);
           }
         } catch (err) {
           console.error('Error loading notification settings:', err);
@@ -113,6 +116,7 @@ const Settings = () => {
       whatsappEveningTime,
       cloudinaryCloudName,
       cloudinaryUploadPreset,
+      mindfulRemindersEnabled,
       updatedAt: new Date().toISOString()
     };
 
@@ -207,6 +211,24 @@ const Settings = () => {
     }
     if (sub) {
       alert('تم تفعيل الإشعارات بنجاح!');
+    }
+  };
+
+  const handleToggleMindfulReminders = async () => {
+    if (!mindfulRemindersEnabled) {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          setMindfulRemindersEnabled(true);
+          setPermissionState('granted');
+        } else {
+          alert('يرجى السماح بصلاحيات الإشعارات في متصفحك لتفعيل تنبيهات اليقظة الذهنية.');
+        }
+      } else {
+        alert('الإشعارات غير مدعومة في هذا المتصفح.');
+      }
+    } else {
+      setMindfulRemindersEnabled(false);
     }
   };
 
@@ -510,6 +532,30 @@ const Settings = () => {
                 onChange={e => setCloudinaryUploadPreset(e.target.value)}
                 placeholder="مثال: my_unsigned_preset"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Mindful Reminders Desktop Settings */}
+        <div className="flex flex-col gap-md border-b border-ui pb-md text-right">
+          <div className="flex justify-between items-start">
+            <div 
+              className="flex items-center gap-xs cursor-pointer mt-xs" 
+              onClick={handleToggleMindfulReminders}
+            >
+              <div className={`w-10 h-6 rounded-full relative transition-colors ${mindfulRemindersEnabled ? 'bg-orange' : 'bg-ui'}`}>
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${mindfulRemindersEnabled ? 'right-[18px]' : 'right-[2px]'}`} />
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-xs text-right" style={{ maxWidth: '80%' }}>
+              <h3 className="font-bold text-lg flex items-center gap-xs text-main justify-end" style={{ margin: 0 }}>
+                <Sparkles size={18} className="text-accent" />
+                تنبيهات اليقظة والرسائل اللطيفة 🌸
+              </h3>
+              <p className="text-xs text-muted" style={{ margin: 0 }}>
+                تذكيرات سطح المكتب اللطيفة للوقوف والتنفس وأخذ استراحة وعي كل بضع ساعات.
+              </p>
             </div>
           </div>
         </div>

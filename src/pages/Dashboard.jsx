@@ -6,6 +6,7 @@ import { db, isMock } from '../firebase/config';
 import { collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Sun, Moon, BookOpen, Calendar, Award, Play, Pause, RotateCcw, X, Heart, Flame, TrendingUp, Compass, Check, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { CATEGORIES } from './Morning';
+import { loadVisionImages, saveVisionImages } from '../utils/indexedDB';
 
 /* ── helpers ─────────────────────────────── */
 
@@ -117,21 +118,29 @@ const Dashboard = () => {
     const loadVisionBoard = async () => {
       let imagesList = Array(6).fill('');
 
-      if (isMock) {
-        const saved = localStorage.getItem(`days_vision_board_${currentUser.uid}`);
-        if (saved) {
-          imagesList = JSON.parse(saved);
-        }
-      } else {
-        try {
-          const docRef = doc(db, 'users', currentUser.uid, 'settings', 'vision_board');
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists() && docSnap.data().images) {
-            imagesList = docSnap.data().images;
+      try {
+        const idbImages = await loadVisionImages(currentUser.uid);
+        if (idbImages && idbImages.some(img => img !== '')) {
+          imagesList = idbImages;
+        } else {
+          // Fallback to local storage or Firestore
+          if (isMock) {
+            const saved = localStorage.getItem(`days_vision_board_${currentUser.uid}`);
+            if (saved) {
+              imagesList = JSON.parse(saved);
+              await saveVisionImages(currentUser.uid, imagesList);
+            }
+          } else {
+            const docRef = doc(db, 'users', currentUser.uid, 'settings', 'vision_board');
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists() && docSnap.data().images) {
+              imagesList = docSnap.data().images;
+              await saveVisionImages(currentUser.uid, imagesList);
+            }
           }
-        } catch (err) {
-          console.error('Error loading vision board:', err);
         }
+      } catch (err) {
+        console.error('Error loading vision board from IndexedDB:', err);
       }
       
       const padded = [...imagesList, ...Array(6).fill('')].slice(0, 6);
@@ -209,6 +218,9 @@ const Dashboard = () => {
         updated[slotIndex] = finalUrl;
         setVisionImages(updated);
 
+        // Save to IndexedDB
+        await saveVisionImages(currentUser.uid, updated);
+
         if (isMock) {
           localStorage.setItem(`days_vision_board_${currentUser.uid}`, JSON.stringify(updated));
         } else {
@@ -230,6 +242,9 @@ const Dashboard = () => {
     setVisionImages(updated);
 
     try {
+      // Save to IndexedDB
+      await saveVisionImages(currentUser.uid, updated);
+
       if (isMock) {
         localStorage.setItem(`days_vision_board_${currentUser.uid}`, JSON.stringify(updated));
       } else {
@@ -244,6 +259,92 @@ const Dashboard = () => {
   const handleCopyAffirmation = () => {
     navigator.clipboard.writeText(dailyAffirmation);
     alert('تم نسخ توكيد اليوم لروحكِ 🌸✨');
+  };
+
+  const handleDownloadWallpaper = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+
+    const frame = document.getElementById('wallpaper-preview-frame');
+    let backgroundStyle = 'linear-gradient(180deg, #F4A261 0%, #D8A7B1 100%)';
+    if (frame) {
+      backgroundStyle = frame.style.background || frame.style.backgroundImage;
+    }
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+    if (backgroundStyle.includes('#A8DADC')) {
+      grad.addColorStop(0, '#A8DADC');
+      grad.addColorStop(1, '#FEE8A8');
+    } else if (backgroundStyle.includes('#6D597A')) {
+      grad.addColorStop(0, '#6D597A');
+      grad.addColorStop(1, '#B5A2C4');
+    } else if (backgroundStyle.includes('#2a9d8f')) {
+      grad.addColorStop(0, '#2a9d8f');
+      grad.addColorStop(1, '#E8DDD0');
+    } else {
+      grad.addColorStop(0, '#F4A261');
+      grad.addColorStop(1, '#D8A7B1');
+    }
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.beginPath(); ctx.arc(200, 300, 150, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(900, 1600, 250, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(800, 400, 80, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    ctx.font = 'normal 45px Cairo, sans-serif';
+    ctx.fillText('🌸', 540, 600);
+
+    ctx.font = 'bold 55px Cairo, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    
+    const text = `"${dailyAffirmation}"`;
+    const words = text.split(' ');
+    let line = '';
+    const lines = [];
+    const maxWidth = 800;
+    
+    for (let n = 0; n < words.length; n++) {
+      let testLine = line + words[n] + ' ';
+      let metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && n > 0) {
+        lines.push(line);
+        line = words[n] + ' ';
+      } else {
+        line = testLine;
+      }
+    }
+    lines.push(line);
+
+    let startY = 960 - (lines.length - 1) * 45;
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i].trim(), 540, startY + i * 90);
+    }
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillRect(490, startY + lines.length * 90 + 30, 100, 3);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.font = 'bold 36px Cairo, sans-serif';
+    ctx.fillText('تطبيق أيام', 540, startY + lines.length * 90 + 100);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = 'normal 30px Cairo, sans-serif';
+    ctx.fillText('تنفسي بعمق • أنتِ بأمان', 540, 1750);
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const downloadLink = document.createElement('a');
+    downloadLink.download = `days-wallpaper-${dayOfYear}.png`;
+    downloadLink.href = dataUrl;
+    downloadLink.click();
   };
 
   /* meditation timer */
@@ -767,6 +868,28 @@ const Dashboard = () => {
       stopAudio();
     };
   }, [timerActive, soundMode, showTimer]);
+  
+  /* ── Modulate meditation breathing sound swell ── */
+  useEffect(() => {
+    if (!timerActive || !showTimer || soundMode === 'none') return;
+    
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
+    
+    const gainNode = soundMode === 'drone' ? gainNodeRef.current : rainGainNodeRef.current;
+    if (!gainNode) return;
+    
+    const peakVolume = soundMode === 'drone' ? 0.08 : 0.16;
+    const lowVolume = soundMode === 'drone' ? 0.01 : 0.03;
+    
+    if (breathState === 'شهيق') {
+      gainNode.gain.linearRampToValueAtTime(peakVolume, ctx.currentTime + 3.8);
+    } else if (breathState === 'زفير') {
+      gainNode.gain.linearRampToValueAtTime(lowVolume, ctx.currentTime + 3.8);
+    } else {
+      gainNode.gain.linearRampToValueAtTime(peakVolume * 0.7, ctx.currentTime + 1);
+    }
+  }, [breathState, timerActive, showTimer, soundMode]);
 
   /* ── quote favoriting effect and helper ──── */
   useEffect(() => {
@@ -1678,13 +1801,22 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <button 
-              onClick={handleCopyAffirmation}
-              className="btn-primary w-full mt-lg"
-              style={{ padding: '10px' }}
-            >
-              نسخ نص التوكيد 📋
-            </button>
+            <div className="flex gap-sm mt-lg" style={{ width: '100%' }}>
+              <button 
+                onClick={handleDownloadWallpaper}
+                className="btn-primary w-full"
+                style={{ padding: '10px' }}
+              >
+                تنزيل الخلفية PNG 📱📥
+              </button>
+              <button 
+                onClick={handleCopyAffirmation}
+                className="btn-secondary w-full"
+                style={{ padding: '10px' }}
+              >
+                نسخ نص التوكيد 📋
+              </button>
+            </div>
           </div>
         </div>
       )}

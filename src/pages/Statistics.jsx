@@ -12,6 +12,7 @@ const Statistics = () => {
   // Data states
   const [mornings, setMornings] = useState([]);
   const [evenings, setEvenings] = useState([]);
+  const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState(7); // 7 or 30 days
   const [aiWeeklyAnalysis, setAiWeeklyAnalysis] = useState('');
@@ -82,6 +83,7 @@ const Statistics = () => {
       setLoading(true);
       const morningList = [];
       const eveningList = [];
+      const habitsList = [];
 
       if (isMock) {
         for (let i = 0; i < localStorage.length; i++) {
@@ -96,6 +98,11 @@ const Statistics = () => {
             const val = JSON.parse(localStorage.getItem(key));
             eveningList.push({ date, ...val });
           }
+          if (key.startsWith(`days_habits_${currentUser.uid}_`)) {
+            const date = key.replace(`days_habits_${currentUser.uid}_`, '');
+            const val = JSON.parse(localStorage.getItem(key));
+            habitsList.push({ date, ...val });
+          }
         }
       } else {
         try {
@@ -104,6 +111,9 @@ const Statistics = () => {
 
           const eveSnap = await getDocs(collection(db, 'users', currentUser.uid, 'evenings'));
           eveSnap.forEach(doc => eveningList.push({ date: doc.id, ...doc.data() }));
+
+          const habitsSnap = await getDocs(collection(db, 'users', currentUser.uid, 'habits'));
+          habitsSnap.forEach(doc => habitsList.push({ date: doc.id, ...doc.data() }));
         } catch (err) {
           console.error('Error fetching statistics:', err);
         }
@@ -114,6 +124,7 @@ const Statistics = () => {
 
       setMornings(morningList);
       setEvenings(eveningList);
+      setHabits(habitsList);
       setLoading(false);
     };
 
@@ -238,20 +249,28 @@ const Statistics = () => {
 
   const getWeeklyMoodData = () => {
     const dataset = [];
-    const dateLimit = new Date();
-    dateLimit.setDate(dateLimit.getDate() - timeFilter);
+    const DEFAULT_HABITS_COUNT = 5;
 
     for (let i = 0; i < timeFilter; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
       const morningRecord = mornings.find(m => m.date === dateStr);
+      const habitRecord = habits.find(h => h.date === dateStr);
+
+      let habitPercent = 0;
+      if (habitRecord) {
+        const total = DEFAULT_HABITS_COUNT + (habitRecord.customHabits?.length || 0);
+        const completed = habitRecord.completed?.length || 0;
+        habitPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+      }
       
       dataset.push({
         date: dateStr,
         dayLabel: d.toLocaleDateString('ar-EG', { weekday: 'short' }),
         dateLabel: d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric' }),
-        mood: morningRecord ? morningRecord.mood : null
+        mood: morningRecord ? morningRecord.mood : null,
+        habitPercent
       });
     }
     return dataset.reverse();
@@ -372,8 +391,36 @@ const Statistics = () => {
     const x = 20 + (i * 340) / (moodChartDataset.length - 1 || 1);
     // Height = 140, plot from y = 15 to y = 125
     const y = 125 - ((score - 1) * 100) / 3;
-    return { x, y, data };
+    // Habit bar height (max 80px)
+    const barHeight = (data.habitPercent / 100) * 80;
+    const barY = 125 - barHeight;
+    return { x, y, data, barHeight, barY };
   });
+
+  const getCorrelationInsight = () => {
+    let highHabitMoods = [];
+    let lowHabitMoods = [];
+    
+    moodChartDataset.forEach(d => {
+      const score = getMoodScore(d.mood);
+      if (score > 0) {
+        if (d.habitPercent >= 60) {
+          highHabitMoods.push(score);
+        } else {
+          lowHabitMoods.push(score);
+        }
+      }
+    });
+
+    const avg = (arr) => arr.length > 0 ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : null;
+    const highAvg = avg(highHabitMoods);
+    const lowAvg = avg(lowHabitMoods);
+
+    if (highAvg && lowAvg && parseFloat(highAvg) > parseFloat(lowAvg)) {
+      return `✨ نلاحظ أن حالتكِ النفسية تكون أكثر إيجابية واستقراراً (بمعدل ${highAvg}/4) في الأيام التي تلتزمين فيها بإنجاز عاداتكِ اللطيفة بنسبة عالية، مقارنة بالأيام الأخرى (${lowAvg}/4). الحفاظ على عاداتكِ اليومية يمثّل دعامة قوية لسلامكِ الداخلي! 🌸`;
+    }
+    return `🍃 عاداتكِ اليومية اللطيفة وحضوركِ الذهني هما درعكِ الحقيقي. استمراركِ في التدوين يساعدنا على بناء تحليلات أعمق لمساعدتكِ في فهم تقلبات مزاجكِ وعلاقتها بأنشطتكِ.`;
+  };
 
   let pathD = '';
   if (points.length > 0) {
@@ -536,6 +583,47 @@ const Statistics = () => {
                   );
                 })}
 
+                {/* Habits completion bars */}
+                {points.map((pt, i) => (
+                  <g key={`bar-${i}`} opacity="0.8">
+                    {/* Background track for bar */}
+                    <rect 
+                      x={pt.x - 7} 
+                      y="45" 
+                      width="14" 
+                      height="80" 
+                      fill="var(--border-ui)" 
+                      rx="7" 
+                      opacity="0.25" 
+                    />
+                    {/* Active completion bar */}
+                    {pt.barHeight > 0 && (
+                      <rect 
+                        x={pt.x - 7} 
+                        y={pt.barY} 
+                        width="14" 
+                        height={pt.barHeight} 
+                        fill="rgba(42, 157, 143, 0.35)" 
+                        rx="7" 
+                      />
+                    )}
+                    {/* Small percentage text */}
+                    {pt.data.habitPercent > 0 && (
+                      <text 
+                        x={pt.x} 
+                        y={pt.barY - 4} 
+                        fontSize="7" 
+                        textAnchor="middle" 
+                        fill="var(--green)" 
+                        fontWeight="bold"
+                        opacity="0.8"
+                      >
+                        {pt.data.habitPercent}%
+                      </text>
+                    )}
+                  </g>
+                ))}
+
                 {/* SVG Area fill under path */}
                 {areaD && <path d={areaD} fill="url(#moodAreaGradient)" />}
 
@@ -598,6 +686,10 @@ const Statistics = () => {
                 {timeFilter === 7 ? data.dayLabel : (i % 5 === 0 ? data.dateLabel.split('/')[0] : '')}
               </span>
             ))}
+          </div>
+
+          <div className="mt-md pt-sm text-xs text-muted text-right font-semibold" style={{ borderTop: '1px solid var(--border-ui)', padding: '10px var(--space-md) 0 var(--space-md)', lineHeight: '1.6' }}>
+            {getCorrelationInsight()}
           </div>
         </div>
 
