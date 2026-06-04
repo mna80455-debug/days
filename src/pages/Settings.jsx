@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db, isMock } from '../firebase/config';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { Sliders, ChevronLeft, Play, ShieldAlert, Sun, Moon } from 'lucide-react';
+import { Sliders, ChevronLeft, Play, ShieldAlert, Sun, Moon, Sparkles } from 'lucide-react';
 import { requestNotificationPermission } from '../firebase/notifications';
 
 const Settings = () => {
@@ -261,7 +261,7 @@ const Settings = () => {
 
       <header className="page-header animate-in animate-in-delay-1 text-right">
         <h1>إعدادات التنبيهات 🔔</h1>
-        <p>تحكمي في أوقات التنبيهات الصباحية والمسائية لتلقي المراجعات اليومية.</p>
+        <p>تحكم في أوقات التنبيهات الصباحية والمسائية لتلقي المراجعات اليومية.</p>
       </header>
 
       {permissionState !== 'granted' && (
@@ -271,7 +271,7 @@ const Settings = () => {
             صلاحيات الإشعارات غير مفعلة
           </h4>
           <p className="text-sm text-muted">
-            لم تسمحي بإرسال الإشعارات على هذا المتصفح بعد. اضغطي على الزر أدناه لتفعيلها واستقبل تنبيهات الصباح والمساء الحقيقية.
+            لم تسمح بإرسال الإشعارات على هذا المتصفح بعد. اضغط على الزر أدناه لتفعيلها واستقبل تنبيهات الصباح والمساء الحقيقية.
           </p>
           <button 
             onClick={handleRequestPermission}
@@ -302,7 +302,7 @@ const Settings = () => {
                 تنبيهات الصباح 🌅
               </h3>
               <p className="text-xs text-muted" style={{ margin: 0 }}>
-                تنبيه يومي لطيف لتذكيرك بكتابة نوايا اليوم والمزاج لتبدأي خطواتك بحضور واعي.
+                تنبيه يومي لطيف لتذكيرك بكتابة نوايا اليوم والمزاج لتبدأ خطواتك بحضور واعي.
               </p>
             </div>
           </div>
@@ -338,7 +338,7 @@ const Settings = () => {
                 تنبيهات المساء 🌙
               </h3>
               <p className="text-xs text-muted" style={{ margin: 0 }}>
-                تنبيه مسائي هادئ لمراجعة ما أنجزتِ وتوثيق لحظة الامتنان السعيدة للتأمل الذاتي.
+                تنبيه مسائي هادئ لمراجعة ما أنجزت وتوثيق لحظة الامتنان السعيدة للتأمل الذاتي.
               </p>
             </div>
           </div>
@@ -383,18 +383,18 @@ const Settings = () => {
               {/* How to activate instruction */}
               <div className="text-xs text-muted leading-relaxed border-b border-dashed border-ui pb-sm mb-sm text-right">
                 <span className="font-bold text-main block mb-xs">💡 طريقة الحصول على مفتاح الـ Apikey مجاناً في دقيقة:</span>
-                1. أضيفي الرقم <a href="https://wa.me/34621073617" target="_blank" rel="noopener noreferrer" className="font-bold text-accent">+34 621 07 36 17</a> لجهات اتصالك باسم <b>CallMeBot</b>.
+                1. أضف الرقم <a href="https://wa.me/34621073617" target="_blank" rel="noopener noreferrer" className="font-bold text-accent">+34 621 07 36 17</a> لجهات اتصالك باسم <b>CallMeBot</b>.
                 <br />
-                2. أرسلي له رسالة بالواتساب تحتوي على: <code className="bg-ui/40 px-xs py-0.5 rounded text-main font-bold">I allow callmebot to send me messages</code>
+                2. أرسل له رسالة بالواتساب تحتوي على: <code className="bg-ui/40 px-xs py-0.5 rounded text-main font-bold">I allow callmebot to send me messages</code>
                 <br />
-                3. سيرد البوت فوراً بالـ <b>Apikey</b> الخاص بكِ.
+                3. سيرد البوت فوراً بالـ <b>Apikey</b> الخاص بك.
                 <br />
-                4. اكتبيه بالأسفل مع رقم هاتفكِ بالصيغة الدولية.
+                4. اكتبه بالأسفل مع رقم هاتفك بالصيغة الدولية.
               </div>
 
               {/* Phone number */}
               <div className="flex flex-col gap-xs text-right">
-                <label className="text-xs font-bold">رقم هاتفكِ على واتساب (بالصيغة الدولية مع رمز الدولة، مثلاً +201012345678):</label>
+                <label className="text-xs font-bold">رقم هاتفك على واتساب (بالصيغة الدولية مع رمز الدولة، مثلاً +201012345678):</label>
                 <input 
                   type="text"
                   className="input py-1.5 px-sm text-sm"
@@ -494,20 +494,20 @@ const Settings = () => {
               إعدادات رفع الصور (Cloudinary) 📸
             </h3>
             <p className="text-xs text-muted" style={{ margin: 0 }}>
-              اربطي حساب Cloudinary المجاني لرفع صور الذكريات مباشرة وتفادي ترقية خطة فايربيز المدفوعة.
+              اربط حساب Cloudinary المجاني لرفع صور الذكريات مباشرة وتفادي ترقية خطة فايربيز المدفوعة.
             </p>
           </div>
 
           <div className="flex flex-col gap-md bg-cream/40 p-md rounded-md mt-sm border border-ui">
             <div className="text-xs text-muted leading-relaxed border-b border-dashed border-ui pb-sm mb-sm text-right">
               <span className="font-bold text-main block mb-xs text-right">💡 طريقة الحصول على الإعدادات مجاناً في دقيقة:</span>
-              1. سجّلي حساباً مجانياً على <a href="https://cloudinary.com/" target="_blank" rel="noopener noreferrer" className="font-bold text-accent">Cloudinary</a>.
+              1. سجّل حساباً مجانياً على <a href="https://cloudinary.com/" target="_blank" rel="noopener noreferrer" className="font-bold text-accent">Cloudinary</a>.
               <br />
-              2. من لوحة التحكم (Dashboard)، انسخي قيمة الـ <b>Cloud Name</b> واكتبيها أدناه.
+              2. من لوحة التحكم (Dashboard)، انسخ قيمة الـ <b>Cloud Name</b> واكتبها أدناه.
               <br />
-              3. اذهبي إلى الإعدادات (Settings) في Cloudinary ⚙️ ثم <b>Upload</b> ثم مرري للأسفل حتى تجدي قسم <b>Upload presets</b>.
+              3. اذهب إلى الإعدادات (Settings) في Cloudinary ⚙️ ثم <b>Upload</b> ثم مرر للأسفل حتى تجد قسم <b>Upload presets</b>.
               <br />
-              4. اضغطي على <b>Add upload preset</b>، واجعلي الـ Signing Mode هو <b>Unsigned</b> (غير موقّع) ليتيح الرفع من المتصفح، ثم احفظي وانسخي اسم الـ preset واكتبيه بالأسفل.
+              4. اضغط على <b>Add upload preset</b>، واجعل الـ Signing Mode هو <b>Unsigned</b> (غير موقّع) ليتيح الرفع من المتصفح، ثم احفظ وانسخ اسم الـ preset واكتبه بالأسفل.
             </div>
 
             {/* Cloud Name */}
