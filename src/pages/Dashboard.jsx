@@ -61,6 +61,7 @@ const Dashboard = () => {
   });
   const [loadingStats, setLoadingStats] = useState(true);
   const [closestEvent, setClosestEvent] = useState(null);
+  const [habitsCount, setHabitsCount] = useState({ completed: 0, total: 5, percent: 0 });
 
   /* AI quote states */
   const [aiQuote, setAiQuote] = useState('');
@@ -201,6 +202,40 @@ const Dashboard = () => {
     };
 
     calculateStats();
+  }, [currentUser]);
+
+  /* fetch today's habits for summary widget */
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchTodayHabits = async () => {
+      const todayStr = toDateKey(new Date());
+      let dayData = null;
+
+      if (isMock) {
+        const saved = localStorage.getItem(`days_habits_${currentUser.uid}_${todayStr}`);
+        if (saved) dayData = JSON.parse(saved);
+      } else {
+        try {
+          const docRef = doc(db, 'users', currentUser.uid, 'habits', todayStr);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) dayData = docSnap.data();
+        } catch (err) {
+          console.error('Error loading today habits for widget:', err);
+        }
+      }
+
+      if (dayData) {
+        const total = 5 + (dayData.customHabits?.length || 0);
+        const completed = dayData.completed?.length || 0;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        setHabitsCount({ completed, total, percent });
+      } else {
+        setHabitsCount({ completed: 0, total: 5, percent: 0 });
+      }
+    };
+
+    fetchTodayHabits();
   }, [currentUser]);
 
   const generateAIQuote = async (mood, topTask) => {
@@ -962,6 +997,19 @@ const Dashboard = () => {
                       `✨ رائع! أنتِ مستمرة في الحضور لليوم الـ ${stats.streak} على التوالي. فخورون بكِ!`
                     )}
                   </p>
+                </div>
+
+                {/* Habits Summary */}
+                <div className="flex flex-col gap-xs text-right mt-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted font-bold text-sm">عادات اليوم 🌸:</span>
+                    <Link to="/habits" className="font-bold text-sm hover:underline" style={{ color: 'var(--orange)', textDecoration: 'none' }}>
+                      {habitsCount.completed} من {habitsCount.total} مكتملة ✨
+                    </Link>
+                  </div>
+                  <div className="progress-bar mt-xs" style={{ height: '6px' }}>
+                    <div className="progress-fill" style={{ width: `${habitsCount.percent}%`, backgroundColor: 'var(--orange)' }} />
+                  </div>
                 </div>
               </div>
             )}
