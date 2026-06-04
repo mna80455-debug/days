@@ -151,7 +151,7 @@ const LifeWeeks = () => {
         if (status === 'past') {
           title = `الأسبوع ${weekIndex} من سنة ${yearIndex} — [${dateStr}] (${phaseLabel})`;
         } else if (status === 'current') {
-          title = `أنتِ هنا الآن 🔥 (الأسبوع ${weekIndex} من سنة ${yearIndex}) — [${dateStr}]`;
+          title = `أنت هنا الآن 🔥 (الأسبوع ${weekIndex} من سنة ${yearIndex}) — [${dateStr}]`;
         } else {
           title = `أسبوع مستقبلي (الأسبوع ${weekIndex} من سنة ${yearIndex}) — [${dateStr}]`;
         }
@@ -260,7 +260,7 @@ const LifeWeeks = () => {
           <header className="page-header animate-in animate-in-delay-1 text-center" style={{ marginBottom: 'var(--space-2xl)' }}>
             <h1 style={{ color: 'var(--brown)', fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>حياتك في أسابيع</h1>
             <p className="text-lg font-bold" style={{ color: 'var(--text-muted)' }}>
-              عشتِ {weeksLived} أسبوع من أصل {totalWeeks} — أي {percentLived}% من رحلتك
+              مرَّ من حياتك {weeksLived} أسبوعاً من أصل {totalWeeks} — أي {percentLived}% من رحلتك
             </p>
             
             <div className="flex gap-md justify-center items-center mt-md flex-wrap">
@@ -311,7 +311,7 @@ const LifeWeeks = () => {
               {hoveredWeek ? (
                 <p className="text-sm font-bold text-main" style={{ margin: 0 }}>
                   {hoveredWeek.status === 'current' ? (
-                    <span className="text-accent font-black">أنتِ هنا الآن 🔥 الأسبوع {hoveredWeek.weekIndex} من السنة {hoveredWeek.yearIndex} من حياتكِ</span>
+                    <span className="text-accent font-black">أنت هنا الآن 🔥 الأسبوع {hoveredWeek.weekIndex} من السنة {hoveredWeek.yearIndex} من حياتك</span>
                   ) : hoveredWeek.status === 'past' ? (
                     <span>أسبوع مضى: الأسبوع {hoveredWeek.weekIndex} من السنة {hoveredWeek.yearIndex} [{hoveredWeek.dateStr}] — مرحلة {hoveredWeek.phaseLabel}</span>
                   ) : (
@@ -320,7 +320,7 @@ const LifeWeeks = () => {
                 </p>
               ) : (
                 <p className="text-sm text-muted font-bold" style={{ margin: 0 }}>
-                  مرري مؤشر الفأرة فوق أي مربع لرؤية تفاصيل الأسبوع في رحلة حياتكِ 🗺️
+                  مرر مؤشر الفأرة فوق أي مربع لرؤية تفاصيل الأسبوع في رحلة حياتك 🗺️
                 </p>
               )}
             </div>
@@ -348,7 +348,7 @@ const LifeWeeks = () => {
               </div>
               <div className="flex items-center gap-xs">
                 <div className="w-3.5 h-3.5 rounded-sm week-current" style={{ animation: 'none', boxShadow: 'none' }} />
-                <span className="font-bold text-muted">أنتِ هنا الآن 🔥</span>
+                <span className="font-bold text-muted">أنت هنا الآن 🔥</span>
               </div>
               <div className="flex items-center gap-xs">
                 <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: 'transparent', border: '1px solid var(--beige)' }} />

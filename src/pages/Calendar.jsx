@@ -130,7 +130,7 @@ const Calendar = () => {
   };
 
   const handleDeleteEvent = async (id) => {
-    if (!window.confirm('هل أنتِ متأكدة من حذف هذه المناسبة؟')) return;
+    if (!window.confirm('هل أنت متأكد من حذف هذه المناسبة؟')) return;
     
     try {
       if (isMock) {

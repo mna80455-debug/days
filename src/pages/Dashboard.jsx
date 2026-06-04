@@ -338,7 +338,7 @@ const Dashboard = () => {
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = 'normal 30px Cairo, sans-serif';
-    ctx.fillText('تنفسي بعمق • أنتِ بأمان', 540, 1750);
+    ctx.fillText('تنفس بعمق • أنت بأمان', 540, 1750);
 
     const dataUrl = canvas.toDataURL('image/png');
     const downloadLink = document.createElement('a');
@@ -370,11 +370,11 @@ const Dashboard = () => {
     "السعادة لا تأتي بعد الإنجاز، بل تولد من الامتنان لرحلة السعي.",
     "تنفس بعمق، ودع المخاوف تتبخر مع زفير اليوم.",
     "كل لحظة هي بداية جديدة، وكل بداية تحمل في طياتها سلاماً دافئاً.",
-    "حافظي على هدوء داخلك، فالعاصفة الخارجية لا تؤثر في البيت الثابت.",
-    "اقبلي يومك كما هو، وابحثي عن الجمال الصغير المخبأ بين تفاصيله.",
-    "الحضور الذهني هو هدية تقدمينها لنفسك في كل دقيقة من يومك.",
-    "تأملي برفق، وعيشي ببطء، وتذوقي تفاصيل حياتك بامتنان.",
-    "كل يوم تعيشينه بوعي هو إضافة حقيقية لعمق حياتك.",
+    "حافظ على هدوء داخلك، فالعاصفة الخارجية لا تؤثر في البيت الثابت.",
+    "اقبل يومك كما هو، وابحث عن الجمال الصغير المخبأ بين تفاصيله.",
+    "الحضور الذهني هو هدية تقدمها لنفسك في كل دقيقة من يومك.",
+    "تأمل برفق، وعش ببطء، وتذوق تفاصيل حياتك بامتنان.",
+    "كل يوم تعيشه بوعي هو إضافة حقيقية لعمق حياتك.",
   ];
   const dailyQuote = dailyQuotes[dayOfYear % dailyQuotes.length];
 
@@ -496,14 +496,14 @@ const Dashboard = () => {
 
   const generateAIQuote = async (mood, topTask) => {
     setLoadingQuote(true);
-    const userName = currentUser?.displayName || 'صديقتي';
+    const userName = currentUser?.displayName || 'صديقنا';
     const cleanMood = mood || '🍃';
-    const cleanTask = topTask || 'يومكِ الجميل';
+    const cleanTask = topTask || 'يومك الجميل';
 
     // Check if Groq or Gemini API keys exist
     const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
     const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const prompt = `أنت مرشد تأملي دافئ ومساعد نفسي لشركة "أيام". اكتب اقتباساً تأملياً دافئاً، ملهماً، وقصيراً جداً (سطر واحد فقط) باللغة العربية موجه لـ "${userName}". هي تشعر اليوم بـ "${cleanMood}" وهدفها لليوم هو "${cleanTask}". اجعل الاقتباس يعبر عن تفهم عميق لمزاجها الحالي ويدعمها برفق دون إعطاء نصائح مباشرة أو أوامر. لا تذكر كلمة "اقتباس" ولا تستخدم علامات اقتباس خارجية في النص.`;
+    const prompt = `أنت مرشد تأملي دافئ ومساعد نفسي لتطبيق "أيام". اكتب اقتباساً تأملياً دافئاً، ملهماً، وقصيراً جداً (سطر واحد فقط) باللغة العربية موجه لـ "${userName}". هذا الشخص يشعر اليوم بـ "${cleanMood}" وهدفه لليوم هو "${cleanTask}". اجعل الاقتباس يعبر عن تفهم عميق لمزاجه الحالي ويدعمه برفق دون إعطاء نصائح مباشرة أو أوامر. لا تذكر كلمة "اقتباس" ولا تستخدم علامات اقتباس خارجية في النص.`;
 
     if (groqApiKey) {
       try {
@@ -565,31 +565,30 @@ const Dashboard = () => {
       }
     }
 
-    // Local Intelligent Template Generator (Fallback)
     const localTemplates = {
       'متحمسة': [
-        `طاقة حماسكِ اليوم يا ${userName} جميلة جداً؛ استمتعي بكل لحظة وأنتِ تسعين نحو "${cleanTask}".`,
-        `شغفكِ اليوم يا ${userName} كفيل بإضاءة دروبكِ؛ انطلقي بكل ثقة لإنجاز "${cleanTask}".`
+        `طاقة حماسك اليوم يا ${userName} جميلة جداً؛ استمتع بكل لحظة وأنت تسعى نحو "${cleanTask}".`,
+        `شغفك اليوم يا ${userName} كفيل بإضاءة دروبك؛ انطلق بكل ثقة لإنجاز "${cleanTask}".`
       ],
       'هادئة': [
-        `في هدوء روحكِ يا ${userName} تكمن قوة عظيمة؛ اقتربي من "${cleanTask}" بخطوات مطمئنة.`,
-        `سلامكِ الداخلي يا ${userName} هو أثمن ما تملكين؛ دعي هدوءكِ يرافق خطواتكِ اليوم.`
+        `في هدوء روحك يا ${userName} تكمن قوة عظيمة؛ اقترب من "${cleanTask}" بخطوات مطمئنة.`,
+        `سلامك الداخلي يا ${userName} هو أثمن ما تملك؛ دع هدوءك يرافق خطواتك اليوم.`
       ],
       'ممتنة': [
-        `الامتنان يفتح أبواب السلام يا ${userName}؛ عندما تبدأين "${cleanTask}"، دعي قلبكِ يبتسم للنعم الصغيرة.`,
-        `ممتنة لحضوركِ يا ${userName}؛ خطوتكِ اليوم نحو "${cleanTask}" هي تعبير جميل عن تقديركِ لفرص الحياة.`
+        `الامتنان يفتح أبواب السلام يا ${userName}؛ عندما تبدأ "${cleanTask}"، دع قلبك يبتسم للنعم الصغيرة.`,
+        `ممتن لحضورك يا ${userName}؛ خطوتك اليوم نحو "${cleanTask}" هي تعبير جميل عن تقديرك لفرص الحياة.`
       ],
       'مرهقة': [
-        `التعب يخبركِ أن جسدكِ يستحق الحب يا ${userName}؛ رفقاً بنفسكِ اليوم وأنتِ تسعين لـ "${cleanTask}".`,
-        `الراحة ليست كسلاً يا ${userName}، بل هي وقود الاستمرار؛ خذي وقتاً لنفسكِ بجانب سعيِك لـ "${cleanTask}".`
+        `التعب يخبرك أن جسدك يستحق الحب يا ${userName}؛ رفقاً بنفسك اليوم وأنت تسعى لـ "${cleanTask}".`,
+        `الراحة ليست كسلاً يا ${userName}، بل هي وقود الاستمرار؛ خذ وقتاً لنفسك بجانب سعيك لـ "${cleanTask}".`
       ],
       'قلقة': [
-        `يا ${userName}، القلق غيمة ستعبر؛ تنفسي بعمق، وضعي تركيزكِ على خطوة واحدة مريحة نحو "${cleanTask}".`,
-        `لا تحملي همّ الغد يا ${userName}، أنتِ بأمان الآن؛ خطوتكِ الصغيرة لـ "${cleanTask}" هي كل ما تحتاجينه.`
+        `يا ${userName}، القلق غيمة ستعبر؛ تنفس بعمق، وضع تركيزك على خطوة واحدة مريحة نحو "${cleanTask}".`,
+        `لا تحمل هم الغد يا ${userName}، أنت بأمان الآن؛ خطوتك الصغيرة لـ "${cleanTask}" هي كل ما تحتاجه.`
       ],
       'محايدة': [
-        `في الأيام الهادئة والمحايدة يا ${userName} تكمن فرصة للشحن؛ خوضي غمار "${cleanTask}" بسلاسة ودون ضغوط.`,
-        `يوم آخر هو فرصة جديدة للحضور الهادئ يا ${userName}؛ دعي خطواتكِ لـ "${cleanTask}" تنساب بمرونة.`
+        `في الأيام الهادئة والمحايدة يا ${userName} تكمن فرصة للشحن؛ خض غمار "${cleanTask}" بسلاسة ودون ضغوط.`,
+        `يوم آخر هو فرصة جديدة للحضور الهادئ يا ${userName}؛ دع خطواتك لـ "${cleanTask}" تنساب بمرونة.`
       ]
     };
 
@@ -645,8 +644,8 @@ const Dashboard = () => {
       if (morningDoc) {
         generateAIQuote(morningDoc.mood, morningDoc.topTask);
       } else {
-        const userName = currentUser?.displayName || 'صديقتي';
-        setAiQuote(`ابدأي صباحكِ وسجّلي نواياكِ ومزاجكِ اليوم يا ${userName} لكي أولد لكِ تأملاً واقتباساً مخصصاً يُحاكي شعوركِ ✨`);
+        const userName = currentUser?.displayName || 'صديقنا';
+        setAiQuote(`ابدأ صباحك وسجل نواياك ومزاجك اليوم يا ${userName} لكي أولد لك تأملاً واقتباساً مخصصاً يُحاكي شعورك ✨`);
       }
     };
 
@@ -973,7 +972,7 @@ const Dashboard = () => {
 
       {/* ─── 1. PAGE HEADER ─── */}
       <section className="page-header animate-in">
-        <h1>أهلاً بكِ في مساحتك الهادئة، {currentUser?.displayName || 'يا صديقتي'} ✨</h1>
+        <h1>أهلاً بك في مساحتك الهادئة، {currentUser?.displayName || 'يا صديقنا'} ✨</h1>
         
         <div className="card my-md p-md" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.4)' }}>
           <h2 style={{ fontSize: '2.5rem', color: 'var(--brown)', marginBottom: 'var(--space-xs)' }}>{timeString}</h2>
@@ -988,7 +987,7 @@ const Dashboard = () => {
       <div className="card my-md p-md text-center animate-in animate-in-delay-1" style={{ border: '1px dashed var(--orange)', background: 'linear-gradient(135deg, rgba(244, 162, 97, 0.08) 0%, rgba(226, 149, 120, 0.08) 100%)' }}>
         <span className="text-xs text-muted font-bold flex items-center gap-xs justify-center mb-xs">
           <Sparkles size={14} className="text-accent" />
-          توكيد اليوم لسكينتكِ 🌸
+          توكيد اليوم لسكينتك 🌸
         </span>
         <p className="text-lg font-black text-main my-sm">"{dailyAffirmation}"</p>
         <div className="flex justify-center gap-sm mt-sm">
@@ -1306,11 +1305,11 @@ const Dashboard = () => {
                   </div>
                   <p className="text-[11px] text-muted text-right font-medium leading-relaxed" style={{ margin: 0 }}>
                     {stats.streak === 0 ? (
-                      '🌿 لا بأس بالبدء من جديد! كل يوم هو فرصة جديدة لتواجدك الواعي. حضوركِ اليوم هو المهم.'
+                      '🌿 لا بأس بالبدء من جديد! كل يوم هو فرصة جديدة لتواجدك الواعي. حضورك اليوم هو المهم.'
                     ) : !todayReflection.morning ? (
-                      '🔥 شعلتكِ مستمرة! سجّلي نوايا الصباح اليوم لتحافظي على حضوركِ المتتالي.'
+                      '🔥 شعلتك مستمرة! سجل نوايا الصباح اليوم لتحافظ على حضورك المتتالي.'
                     ) : (
-                      `✨ رائع! أنتِ مستمرة في الحضور لليوم الـ ${stats.streak} على التوالي. فخورون بكِ!`
+                      `✨ رائع! أنت مستمر في الحضور لليوم الـ ${stats.streak} على التوالي. فخورون بك!`
                     )}
                   </p>
                 </div>
@@ -1764,7 +1763,7 @@ const Dashboard = () => {
 
               {/* Bottom decorative hint */}
               <div style={{ fontSize: '0.6rem', opacity: 0.7 }}>
-                تنفسي بعمق • أنتِ بأمان
+                تنفس بعمق • أنت بأمان
               </div>
             </div>
 

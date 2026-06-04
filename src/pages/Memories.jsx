@@ -258,7 +258,7 @@ const Memories = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm('هل أنتِ متأكدة من حذف هذه الذكرى؟')) return;
+    if (!window.confirm('هل أنت متأكد من حذف هذه الذكرى؟')) return;
 
     if (isMock) {
       const updatedList = memories.filter(m => m.id !== id);
